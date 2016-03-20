@@ -1,4 +1,5 @@
 RewriteEngine On
+RewriteBase /api/
 RewriteRule ^(.*)$ index.php [QSA,L]
 
 SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
