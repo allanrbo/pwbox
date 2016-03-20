@@ -1,0 +1,7 @@
+{
+    "uriPrefix": "/api",
+    "logPath": "/pwbox/data/logs",
+    "gpghome": "/pwbox/data/gpghome",
+    "secretsPath": "/pwbox/data/secrets",
+    "tokenExpiryMinutes": 45
+}

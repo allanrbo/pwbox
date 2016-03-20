@@ -1,0 +1,93 @@
+/*
+ * Purecss.io form styles
+ */
+
+.pure-form input[type="text"],
+.pure-form input[type="password"],
+.pure-form input[type="email"],
+.pure-form input[type="url"],
+.pure-form input[type="date"],
+.pure-form input[type="month"],
+.pure-form input[type="time"],
+.pure-form input[type="datetime"],
+.pure-form input[type="datetime-local"],
+.pure-form input[type="week"],
+.pure-form input[type="number"],
+.pure-form input[type="search"],
+.pure-form input[type="tel"],
+.pure-form input[type="color"],
+.pure-form select,
+.pure-form textarea {
+    border: 2px solid #ddd;
+    box-shadow: none;
+    padding: .2em .6em;
+    height: 2.25em;
+}
+
+.pure-form input[type="text"]:focus,
+.pure-form input[type="password"]:focus,
+.pure-form input[type="email"]:focus,
+.pure-form input[type="url"]:focus,
+.pure-form input[type="date"]:focus,
+.pure-form input[type="month"]:focus,
+.pure-form input[type="time"]:focus,
+.pure-form input[type="datetime"]:focus,
+.pure-form input[type="datetime-local"]:focus,
+.pure-form input[type="week"]:focus,
+.pure-form input[type="number"]:focus,
+.pure-form input[type="search"]:focus,
+.pure-form input[type="tel"]:focus,
+.pure-form input[type="color"]:focus,
+.pure-form select:focus,
+.pure-form textarea:focus {
+    border-color: @color2;
+}
+
+.pure-form input:focus:invalid,
+.pure-form textarea:focus:invalid,
+.pure-form select:focus:invalid {
+    color: @invalidTextColor;
+    border-color: @invalidBorderColor;
+}
+
+.pure-form input[type="file"]:focus:invalid:focus,
+.pure-form input[type="radio"]:focus:invalid:focus,
+.pure-form input[type="checkbox"]:focus:invalid:focus {
+    outline-color: @invalidBorderColor;
+}
+
+.pure-form-aligned .radio-group {
+    margin-top: 0;
+}
+
+.field-validation-message {
+    color: red;
+}
+
+.validation-message {
+    color: red;
+}
+
+/*
+ * Purecss.io form styles button styles
+ */
+
+.pure-button,
+a.pure-button {
+    background-color: @color4;
+    color: @textOverColor4;
+    padding: 0.5em 2em;
+    border-radius: 5px;
+}
+
+.pure-button-primary,
+a.pure-button-primary {
+    background-color: @color2;
+    color: @textOverColor2;
+}
+
+// This is due to a strange alignment bug that seems to happen on smallest width
+.pure-form button[type=submit] {
+   margin: 0;
+}
+
