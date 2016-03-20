@@ -242,5 +242,8 @@ function gpgGetSecretFile($username, $passphrase, $secretId) {
         exit();
     }
 
-    return json_decode(gpgDecryptSecret($username, $passphrase, $ciphertext), true);
+    $secret = json_decode(gpgDecryptSecret($username, $passphrase, $ciphertext), true);
+    sort($recipients);
+    $secret["recipients"] = $recipients;
+    return $secret;
 }
