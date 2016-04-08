@@ -97,13 +97,11 @@ if($method == "POST" && $uri == "/secret") {
 
     $data = json_decode(file_get_contents("php://input"), true);
     $recipients = [$authInfo["username"]];
-    if(isset($data["additionalRecipients"])) {
-        if(is_array($data["additionalRecipients"])) {
-            $recipients = array_merge($recipients, $data["additionalRecipients"]);
-        }
-
-        unset($data["additionalRecipients"]);
+    if(isset($data["recipients"])) {
+        $recipients = array_unique(array_merge($recipients, $data["recipients"]));
     }
+
+    unset($data["recipients"]);
 
     $secretId = gpgCreateSecretFile($authInfo["username"], $authInfo["password"], $recipients, json_encode($data));
     echo json_encode(["status" => "ok", "id" => $secretId]);
@@ -123,13 +121,11 @@ if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 
     $data = json_decode(file_get_contents("php://input"), true);
     $recipients = [$authInfo["username"]];
-    if(isset($data["additionalRecipients"])) {
-        if(is_array($data["additionalRecipients"])) {
-            $recipients = array_merge($recipients, $data["additionalRecipients"]);
-        }
-
-        unset($data["additionalRecipients"]);
+    if(isset($data["recipients"])) {
+        $recipients = array_unique(array_merge($recipients, $data["recipients"]));
     }
+
+    unset($data["recipients"]);
 
     $secretId = gpgUpdateSecretFile($authInfo["username"], $authInfo["password"], $recipients, $secretId, json_encode($data));
     echo json_encode(["status" => "ok", "id" => $secretId]);
