@@ -172,6 +172,31 @@ if($method == "GET" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 
 
 /*
+ * Delete secret endpoint
+ */
+$matches = null;
+if($method == "DELETE" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    $secretId = $matches[1];
+
+    $secretsPath = getconfig()["secretsPath"];
+    if(!file_exists("$secretsPath/$secretId")) {
+        http_response_code(404);
+        echo json_encode(["status" => "notFound"]);
+        exit();
+    }
+
+    unlink("$secretsPath/$secretId");
+
+    echo json_encode(["status" => "ok"]);
+    exit();
+}
+
+
+
+/*
  * Default endpoint
  */
 http_response_code(404);
