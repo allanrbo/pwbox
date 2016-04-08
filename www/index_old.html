@@ -1,0 +1,128 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pwbox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel="stylesheet" type="text/css" href="css/lib/pure-release-0.6.0/pure-min.css" />
+    <link rel="stylesheet" type="text/css" href="css/lib/pure-release-0.6.0/grids-responsive-min.css">
+
+    <link rel="stylesheet/less" type="text/css" href="css/main.less" />
+    <script>
+    less = {
+        async: true
+    };
+    </script>
+    <script src="js/lib/less-2.5.3.min.js" type="text/javascript"></script>
+</head>
+<body>
+
+
+<div id="main">
+
+    <div id="applayout">
+        <!-- Menu toggle -->
+        <a id="menuLink" class="menu-link">
+            <!-- Hamburger icon -->
+            <span></span>
+        </a>
+
+        <div id="menu">
+            <div class="pure-menu">
+                <a class="pure-menu-heading" href="#">Pwbox</a>
+                <ul class="pure-menu-list">
+                    <li class="pure-menu-item"><a href="" class="pure-menu-link">View secrets</a></li>
+                    <li class="pure-menu-item" class="menu-item-divided pure-menu-selected">
+                        <a href="" class="pure-menu-link">Create new secret</a>
+                    </li>
+                    <li class="pure-menu-item menu-item-divided"><a href="" class="pure-menu-link">Log out</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div>
+            <div id="content">
+
+
+
+
+
+                <h2>Edit secret</h2>
+
+                <div id="validation-message" class="validation-message"></div>
+
+                <input id="id" type="hidden" value=""/>
+
+                <form class="pure-form pure-form-aligned" onsubmit="return false;">
+                    <fieldset>
+
+                        <div class="pure-control-group">
+                            <label for="name">
+                                Title
+                            </label>
+                            <input id="name" type="text" value="GMail" placeholder="Some service"/>
+                            <div class="field-validation-message" id="field-validation-message-name"></div>
+                        </div>
+
+                        <div class="pure-control-group">
+                            <label for="additionalUsers">
+                                Additional users who may access this secret
+                            </label>
+                            <input id="additionalUsers" type="text" value="user1,user2" placeholder="user1,user2" />
+                            <div class="field-validation-message" id="field-validation-message-additionalUsers"></div>
+                        </div>
+
+                        <div class="pure-control-group">
+                            <label for="username">
+                                Username
+                            </label>
+                            <input id="username" type="text" value="someone@gmail.com" placeholder="someone@gmail.com"/>
+                            <div class="field-validation-message" id="field-validation-message-username"></div>
+                        </div>
+
+                        <div class="pure-control-group">
+                            <label for="password">
+                                Password
+                            </label>
+                            <input id="password" type="text" value="password123" placeholder="password123"/>
+                            <div class="field-validation-message" id="field-validation-message-password"></div>
+                        </div>
+
+                        <div class="pure-control-group">
+                            <label for="notes">Notes</label>
+                            <textarea id="notes" style="width: 20em; height: 20em;"></textarea>
+                            <div class="field-validation-message" id="field-validation-message-notes"></div>
+                        </div>
+
+                        <div class="pure-controls">
+                            <button type="submit" id="save" class="pure-button pure-button-primary">
+                                Save
+                            </button>
+
+                            <button id="delete" class="pure-button">Delete</button>
+                        </div>
+
+                    </fieldset>
+                </form>
+
+
+
+
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- <script src="js/lib/jquery-2.1.4.min.js"></script> -->
+
+<script src="js/lib/mithril.min.js"></script>
+<script src="js/main.js"></script>
+
+
+</body>
+</html>
