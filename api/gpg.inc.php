@@ -196,8 +196,13 @@ function gpgRecipientsFromCiphertext($ciphertext) {
 
 
 function gpgCreateSecretFile($signUser, $signUserPassphrase, $recipientUsernames, $text) {
-    $ciphertext = gpgEncryptSecret($signUser, $signUserPassphrase, $recipientUsernames, $text);
     $secretId = uniqid();
+    return gpgUpdateSecretFile($signUser, $signUserPassphrase, $recipientUsernames, $secretId, $text);
+}
+
+
+function gpgUpdateSecretFile($signUser, $signUserPassphrase, $recipientUsernames, $secretId, $text) {
+    $ciphertext = gpgEncryptSecret($signUser, $signUserPassphrase, $recipientUsernames, $text);
     file_put_contents(getconfig()["secretsPath"] . "/" . $secretId, $ciphertext);
     return $secretId;
 }

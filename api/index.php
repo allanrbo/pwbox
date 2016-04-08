@@ -112,6 +112,32 @@ if($method == "POST" && $uri == "/secret") {
 
 
 /*
+ * Secrets update endpoint
+ */
+$matches = null;
+if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    $secretId = $matches[1];
+
+    $data = json_decode(file_get_contents("php://input"), true);
+    $recipients = [$authInfo["username"]];
+    if(isset($data["additionalRecipients"])) {
+        if(is_array($data["additionalRecipients"])) {
+            $recipients = array_merge($recipients, $data["additionalRecipients"]);
+        }
+
+        unset($data["additionalRecipients"]);
+    }
+
+    $secretId = gpgUpdateSecretFile($authInfo["username"], $authInfo["password"], $recipients, $secretId, json_encode($data));
+    echo json_encode(["status" => "ok", "id" => $secretId]);
+    exit();
+}
+
+
+/*
  * Secrets list endpoint
  */
 if($method == "GET" && $uri == "/secret") {
