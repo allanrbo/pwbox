@@ -24,24 +24,24 @@ var Login = {
   },
 
   view: function(ctrl) {
-    return m(".login", [
-      m("h1", "Login"),
-      ctrl.errorMessage() ? m("div.error-message", ctrl.errorMessage()) : "",
-      m("div.pure-form.pure-form-aligned", [
-        m("fieldset", [
-          m(".pure-control-group", [
-            m("label[for='username']", "Username"),
-            m("input[id='username'][type='text']", { value: ctrl.username(), oninput: m.withAttr("value", ctrl.username) } )
-            ]),
-          m(".pure-control-group", [
-            m("label", "Password",
-              m("input", { type: "password", value: ctrl.password(),  oninput: m.withAttr("value", ctrl.password) } )
-            )]),
-          m(".pure-controls", [
-            m("button.pure-button.pure-button-primary", { onclick: ctrl.login }, "Log in")
+    return m(".login-form", [
+        m("h1", "PwBox login"),
+        ctrl.errorMessage() ? m("div.error-message", ctrl.errorMessage()) : "",
+        m("div.pure-form.pure-form-aligned", [
+          m("fieldset", [
+            m(".pure-control-group", [
+              m("label", { "for": "username" }, "Username"),
+              m("input[id='username'][type='text']", { value: ctrl.username(), oninput: m.withAttr("value", ctrl.username) } )
+              ]),
+            m(".pure-control-group", [
+              m("label", { "for": "password" }, "Password"),
+              m("input", { id: "password", type: "password", value: ctrl.password(),  oninput: m.withAttr("value", ctrl.password) } )
+              ]),
+            m(".pure-controls", [
+              m("button.pure-button.pure-button-primary", { onclick: ctrl.login }, "Log in")
+              ])
             ])
           ])
-        ])
     ])
   }
 

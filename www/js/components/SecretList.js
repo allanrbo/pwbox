@@ -11,10 +11,6 @@ var SecretList = {
       m.route("/secrets/" + id);
     };
 
-    this.addSecret = function(id) {
-      m.route("/secrets/new");
-    };
-
     // Initialize
     m.startComputation();
 
@@ -35,20 +31,19 @@ var SecretList = {
   view: function(ctrl) {
     console.debug('Secrets view');
 
-    return [
+    return m("#applayout", [
       Templates.navigation(),
-      m(".secrets", [
-        m("h1", "Secrets"),
-
-        m("a", { onclick: ctrl.addSecret }, "Add new secret"),
+      m("#content.secrets", [
+        m("h2", "Secrets"),
 
         ctrl.secrets().length > 0 ? [
 
-          m('table', [
-
-            m('tr', [
-              m('th', 'Title')
-              ]
+          m('table.pure-table.pure-table-horizontal', [
+            m("thead",
+              m('tr', [
+                m('th', 'Title')
+                ]
+              )
             ),
 
             ctrl.secrets().map(function(secret) {
@@ -63,7 +58,7 @@ var SecretList = {
 
 
       ])
-    ]
+    ])
   }
 
 };

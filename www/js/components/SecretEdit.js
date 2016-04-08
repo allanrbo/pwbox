@@ -79,36 +79,36 @@ var SecretEdit = {
   view: function(ctrl) {
 
     var inputField = function(text, field) { 
-      return m("div.field-wrapper", m("label", [
-        text,
+      return m(".pure-control-group", [
+        m("label", text),
         m("input", { oninput: m.withAttr("value", field), value: field() } )
-      ]))
+      ]);
     };
 
-    return [
+    return m("#applayout", [
       Templates.navigation(),
-      m(".secret-edit", [
-        m("h1", "Edit secret"),
+      m("#content", [
+        m(".secret-edit", [
+          m("h2", "Edit secret"),
 
-        ctrl.statusMessage() ? m('p', ctrl.statusMessage()) : '',
+          ctrl.statusMessage() ? m('p', ctrl.statusMessage()) : '',
 
-        m(".form", [
-
-          inputField("Title", ctrl.title),
-          inputField("Username", ctrl.username),
-          inputField("Password", ctrl.password),
-          inputField("Notes", ctrl.notes),
-          inputField("Additional users", ctrl.additionalUsers),
-
-          m('button', { onclick: ctrl.save }, 'Save'),
-
-          m("p", m("a", { onclick: function() { m.route('/secrets') } }, "Back to list")),
-
-
+          m("form.pure-form.pure-form-aligned", 
+            m("fieldset", [
+              inputField("Title", ctrl.title),
+              inputField("Username", ctrl.username),
+              inputField("Password", ctrl.password),
+              inputField("Notes", ctrl.notes),
+              inputField("Additional users", ctrl.additionalUsers),
+              m(".pure-controls", [
+                m('button.pure-button.pure-button-primary', { onclick: ctrl.save }, 'Save'),
+                m("p", m("a", { onclick: function() { m.route('/secrets') } }, "Back to list"))
+              ]),
+            ])
+          )
         ])
-
       ])
-    ]
+    ])
   }
 
 };
