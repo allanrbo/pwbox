@@ -166,7 +166,7 @@ if($method == "GET" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
         exit();
     }
 
-    echo json_encode(gpgGetSecretFile($authInfo["username"], $authInfo["password"], $secretId));
+    echo json_encode(array_merge(["id" => $secretId], gpgGetSecretFile($authInfo["username"], $authInfo["password"], $secretId)));
     exit();
 }
 
