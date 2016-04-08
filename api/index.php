@@ -107,6 +107,7 @@ if($method == "POST" && $uri == "/secret") {
     }
 
     unset($data["recipients"]);
+    unset($data["id"]);
 
     $secretId = gpgCreateSecretFile($authInfo["username"], $authInfo["password"], $recipients, json_encode($data));
     echo json_encode(["status" => "ok", "id" => $secretId]);
@@ -131,6 +132,7 @@ if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     }
 
     unset($data["recipients"]);
+    unset($data["id"]);
 
     $secretId = gpgUpdateSecretFile($authInfo["username"], $authInfo["password"], $recipients, $secretId, json_encode($data));
     echo json_encode(["status" => "ok", "id" => $secretId]);
