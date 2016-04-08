@@ -11,7 +11,8 @@ Templates.navigation = function() {
       m("a.pure-menu-heading", { href: "#" }, "PwBox"),
       m("ul.pure-menu-list", [
         menuItem("List secrets", "/secrets"),
-        menuItem("New secret", "/secrets/new")
+        menuItem("New secret", "/secrets/new"),
+        m("li.pure-menu-item.menu-item-divided", m("a.pure-menu-link", { onclick: function() { m.route("/logout") } }, "Log out"))
       ])
     ])
   )
