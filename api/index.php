@@ -83,7 +83,12 @@ if($method == "GET" && $uri == "/user") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
-    echo json_encode(gpgListAllUsers());
+    $usersObjects = [];
+    foreach (gpgListAllUsers() as $username) {
+        $usersObjects[] = ["username" => $username];
+    }
+
+    echo json_encode($usersObjects);
     exit();
 }
 
