@@ -5,22 +5,13 @@ var Login = {
 
     var self = this;
 
-    this.username = m.prop('');
-    this.password = m.prop(''); 
-    this.errorMessage = m.prop('');   
+    this.username = m.prop("");
+    this.password = m.prop(""); 
+    this.errorMessage = m.prop("");   
 
     this.login = function() {
 
-      m.request({
-        method: "POST",
-        url: "http://46.101.38.96/api/authenticate",
-        data: {
-          username: this.username(),
-          password: this.password()
-        }
-      }).then(function(data) {
-
-        localStorage.setItem("token", data.token);
+      Session.login(this.username(), this.password()).then(function(data) {
         self.errorMessage("")
         m.route("/secrets");
 

@@ -1,6 +1,7 @@
+
 var xhrConfig = function(xhr) {
   xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+  xhr.setRequestHeader("Authorization", "Bearer " + Session.token());
 };
 
 m.route.mode = "hash";
