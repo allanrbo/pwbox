@@ -12,7 +12,8 @@ Templates.navigation = function() {
       m("ul.pure-menu-list", [
         menuItem("List secrets", "/secrets"),
         menuItem("New secret", "/secrets/new"),
-        menuItem("Change my password", "/user"),
+        menuItem("Create user", "/user"),
+        menuItem("Change my password", "/change-my-password"),
         m("li.pure-menu-item.menu-item-divided", m("a.pure-menu-link", { onclick: function() { m.route("/logout") } }, "Log out"))
       ])
     ])

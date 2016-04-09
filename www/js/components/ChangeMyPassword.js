@@ -1,11 +1,11 @@
-var UserEdit = {
+var ChangeMyPassword = {
 
   controller: function() {
     var self = this;
 
     // Variables
-    this.user = m.prop( new User());
-    this.created = m.prop(false);
+    this.user = m.prop( new User({id: Session.username() }));
+    console.debug(this.user());
 
     this.statusMessage = m.prop("");
 
@@ -15,8 +15,7 @@ var UserEdit = {
       m.startComputation();
 
       self.user().save().then(function(data) {
-        self.statusMessage("Created");
-        self.created(true);
+        self.statusMessage("Updated")
         m.endComputation();
 
       }, function(a) {      
@@ -41,24 +40,21 @@ var UserEdit = {
     return m("#applayout", [
       Templates.navigation(),
       m("#content", [
-        m(".user-edit", [
+        m(".change-my-password", [
 
-          m("h2", "Create user"),
+          m("h2", "Change password"),
 
           ctrl.statusMessage() ? m('p', ctrl.statusMessage()) : '',
 
-          !ctrl.created() ?
-            m("form.pure-form.pure-form-aligned", 
-              m("fieldset", [
-                inputField("Username", ctrl.user().username),
-                inputField("Password", ctrl.user().password, "password"),
+          m("form.pure-form.pure-form-aligned", 
+            m("fieldset", [
+              inputField("Password", ctrl.user().password, "password"),
 
-                m(".pure-controls", [
-                  m('button.pure-button.pure-button-primary', { onclick: ctrl.save }, 'Save'),
-                ]),
-              ])
-            )
-          : ''
+              m(".pure-controls", [
+                m('button.pure-button.pure-button-primary', { onclick: ctrl.save }, 'Save'),
+              ]),
+            ])
+          )
         ])
       ])
     ])

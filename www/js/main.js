@@ -11,6 +11,7 @@ m.route(document.body, "/secrets", {
   "/secrets/:id": SecretEdit,
   "/secrets/new": SecretEdit,
   "/user": UserEdit,
+  "/change-my-password": ChangeMyPassword,
   "/logout": {
     controller: function() {
       Session.logout();

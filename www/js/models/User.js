@@ -6,6 +6,6 @@ var User = ModelFramework(function(content) {
   this.username = m.prop(content.username || "");
   this.password = m.prop(content.password || "");
 
-  this.saveFields = ['password'];
+  this.saveFields = ['username', 'password'];
 
 }, config.api + 'user');
