@@ -19,9 +19,11 @@ var Login = {
           password: this.password()
         }
       }).then(function(data) {
+
         localStorage.setItem("token", data.token);
-        self.errorMessage('')
-        m.route('/secrets');
+        self.errorMessage("")
+        m.route("/secrets");
+
       }, function(a) {
         self.errorMessage(a.message);
       });
@@ -32,8 +34,8 @@ var Login = {
 
   view: function(ctrl) {
     return m(".login", [
-      m("h1", "Firewall authentication"),
-      ctrl.errorMessage ? m("div.error-message", ctrl.errorMessage()) : "",
+      m("h1", "Login"),
+      ctrl.errorMessage() ? m("div.error-message", ctrl.errorMessage()) : "",
       m("div.pure-form.pure-form-aligned", [
         m("fieldset", [
           m(".pure-control-group", [

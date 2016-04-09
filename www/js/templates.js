@@ -2,12 +2,15 @@ var Templates = {};
 
 Templates.navigation = function() {
 	
-  return m('.navigation',
-	  m('ul', [
-	    m('li', 'A'), 
-	    m('li', 'B')
-	    ]
-    )
+  var menuItem = function(text, route) {
+    return m("li", m("a", { onclick: function() { m.route(route) } }, text));
+  };
+
+  return m(".navigation",
+	  m("ul", [
+      menuItem("List secrets", "/secrets"),
+      menuItem("New secret", "/secrets/new")
+	  ])
 	)
 
 };

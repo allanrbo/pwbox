@@ -5,8 +5,9 @@ var xhrConfig = function(xhr) {
 
 m.route.mode = "hash";
 
-
 m.route(document.body, "/secrets", {
   "/login": Login,
-  "/secrets": Secrets
+  "/secrets": SecretList,
+  "/secrets/:id": SecretEdit,
+  "/secrets/new": SecretEdit
 });
