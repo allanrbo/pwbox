@@ -20,7 +20,7 @@ var SecretList = {
 
     m.request({
       method: "GET",
-      url: "http://46.101.38.96/api/secret",
+      url: config.api + "secret",
       config: xhrConfig
     }).then(function(data) {
       self.secrets(data || []);

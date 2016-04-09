@@ -30,7 +30,7 @@ var SecretEdit = {
 
       m.request({
         method: self.exists ? "PUT" : "POST",
-        url: "http://46.101.38.96/api/secret" + (self.exists ? "/" + self.id() : ""),
+        url: config.api + "secret" + (self.exists ? "/" + self.id() : ""),
         data: data,
         config: xhrConfig
       }).then(function(data) {
@@ -40,7 +40,7 @@ var SecretEdit = {
 
       }, function(a) {      
 
-        m.route("/login");
+        m.route("/logout");
         m.endComputation();
 
       });
@@ -54,7 +54,7 @@ var SecretEdit = {
 
       m.request({
         method: "GET",
-        url: "http://46.101.38.96/api/secret/" + self.id(),
+        url: config.api + "secret/" + self.id(),
         config: xhrConfig
       }).then(function(data) {
 
