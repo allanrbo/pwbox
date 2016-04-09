@@ -83,7 +83,12 @@ if($method == "GET" && $uri == "/user") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
-    echo json_encode(gpgListAllUsers());
+    $usersObjects = [];
+    foreach (gpgListAllUsers() as $username) {
+        $usersObjects[] = ["username" => $username];
+    }
+
+    echo json_encode($usersObjects);
     exit();
 }
 
@@ -97,13 +102,12 @@ if($method == "POST" && $uri == "/secret") {
 
     $data = json_decode(file_get_contents("php://input"), true);
     $recipients = [$authInfo["username"]];
-    if(isset($data["additionalRecipients"])) {
-        if(is_array($data["additionalRecipients"])) {
-            $recipients = array_merge($recipients, $data["additionalRecipients"]);
-        }
-
-        unset($data["additionalRecipients"]);
+    if(isset($data["recipients"])) {
+        $recipients = array_unique(array_merge($recipients, $data["recipients"]));
     }
+
+    unset($data["recipients"]);
+    unset($data["id"]);
 
     $secretId = gpgCreateSecretFile($authInfo["username"], $authInfo["password"], $recipients, json_encode($data));
     echo json_encode(["status" => "ok", "id" => $secretId]);
@@ -123,13 +127,12 @@ if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 
     $data = json_decode(file_get_contents("php://input"), true);
     $recipients = [$authInfo["username"]];
-    if(isset($data["additionalRecipients"])) {
-        if(is_array($data["additionalRecipients"])) {
-            $recipients = array_merge($recipients, $data["additionalRecipients"]);
-        }
-
-        unset($data["additionalRecipients"]);
+    if(isset($data["recipients"])) {
+        $recipients = array_unique(array_merge($recipients, $data["recipients"]));
     }
+
+    unset($data["recipients"]);
+    unset($data["id"]);
 
     $secretId = gpgUpdateSecretFile($authInfo["username"], $authInfo["password"], $recipients, $secretId, json_encode($data));
     echo json_encode(["status" => "ok", "id" => $secretId]);
@@ -166,9 +169,34 @@ if($method == "GET" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
         exit();
     }
 
-    echo json_encode(gpgGetSecretFile($authInfo["username"], $authInfo["password"], $secretId));
+    echo json_encode(array_merge(["id" => $secretId], gpgGetSecretFile($authInfo["username"], $authInfo["password"], $secretId)));
     exit();
 }
+
+
+/*
+ * Delete secret endpoint
+ */
+$matches = null;
+if($method == "DELETE" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    $secretId = $matches[1];
+
+    $secretsPath = getconfig()["secretsPath"];
+    if(!file_exists("$secretsPath/$secretId")) {
+        http_response_code(404);
+        echo json_encode(["status" => "notFound"]);
+        exit();
+    }
+
+    unlink("$secretsPath/$secretId");
+
+    echo json_encode(["status" => "ok"]);
+    exit();
+}
+
 
 
 /*
