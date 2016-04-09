@@ -5,27 +5,42 @@ var SecretList = {
 
     // Variables
     this.secrets = m.prop([]);
+    this.deleteMessage = m.prop('');
 
     // Functions
     this.editSecret = function(id) {
       m.route("/secrets/" + id);
     };
 
+    this.deleteSecret = function(id) {
+      if(confirm("Confirm delete")) {
+        m.startComputation();
+
+        Secret.get(id).then(function(secret) {
+
+          console.log(secret);
+
+          secret.delete().then(function() {
+            self.deleteMessage("Deleted");
+            self.loadSecrets();
+            m.endComputation();
+          });
+
+        })
+      }
+    };
+
+    this.loadSecrets = function() {
+      m.startComputation();
+      Secret.all().then(function(secrets) {
+        console.log(secrets);
+        self.secrets(secrets);
+        m.endComputation();
+      });
+    };
+
     // Initialize
-    m.startComputation();
-
-    m.request({
-      method: "GET",
-      url: config.api + "secret",
-      config: xhrConfig
-    }).then(function(data) {
-      self.secrets(data || []);
-      m.endComputation();
-
-    }, function(a) {
-      m.route("/login");
-      m.endComputation();
-    });
+    self.loadSecrets();
   },
 
   view: function(ctrl) {
@@ -36,19 +51,23 @@ var SecretList = {
       m("#content.secrets", [
         m("h2", "Secrets"),
 
+        ctrl.deleteMessage() ? m("p", ctrl.deleteMessage()) : "",
+
         ctrl.secrets().length > 0 ? [
 
           m('table.pure-table.pure-table-horizontal', [
             m("thead",
               m('tr', [
-                m('th', 'Title')
+                m('th', 'Title'),
+                m('th', '')
                 ]
               )
             ),
 
             ctrl.secrets().map(function(secret) {
               return m('tr', [
-                m('td', m('a', { "data-id": secret.id, onclick: m.withAttr("data-id", ctrl.editSecret) }, secret.title)),
+                m('td', m('a', { "data-id": secret.id(), onclick: m.withAttr("data-id", ctrl.editSecret) }, secret.title())),
+                m('td', m('a', { "data-id": secret.id(), onclick: m.withAttr("data-id", ctrl.deleteSecret) }, "Delete")),
                 ])
             })
 

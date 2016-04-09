@@ -4,33 +4,43 @@ var Session = function() {
     if(typeof t !== 'undefined') {
       localStorage.setItem("token", t);
     }
-    return localStorage.getItem("token")
+    return localStorage.getItem("token");
   };
 
-  var login = function(username, password) {
+  var username = function(t) {
+    if(typeof t !== 'undefined') {
+      localStorage.setItem("username", t);
+    }
+    return localStorage.getItem("username");
+  };
+
+  var login = function(user, password) {
       return m.request({
         method: "POST",
         url: "http://46.101.38.96/api/authenticate",
         data: {
-          username: username,
+          username: user,
           password: password
         }
 
       }).then(function(data) {
-        localStorage.setItem("token", data.token);
+        username(user);
+        token(data.token);
 
       }, function(a) {
-        self.errorMessage(a.message);
+        logout();
 
       });
   };
 
   var logout = function() {
     token("");
+    username("");
   };
 
   return {
     token: token,
+    username: username,
     login: login,
     logout: logout
   }

@@ -10,6 +10,7 @@ m.route(document.body, "/secrets", {
   "/secrets": SecretList,
   "/secrets/:id": SecretEdit,
   "/secrets/new": SecretEdit,
+  "/user": UserEdit,
   "/logout": {
     controller: function() {
       Session.logout();

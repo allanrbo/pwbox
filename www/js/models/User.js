@@ -1,33 +1,11 @@
-var User = function(content) {
+var User = ModelFramework(function(content) {
 	content = content || {};
 
   // Fields
+  this.id = m.prop(content.id || "");
   this.username = m.prop(content.username || "");
-};
+  this.password = m.prop(content.password || "");
 
-User.all = function() {
-  var deferred = m.deferred();
+  this.saveFields = ['password'];
 
-  m.request({
-    method: "GET",
-    url: config.api + "user",
-    config: xhrConfig,
-    background: true
-
-  }).then(function(data) {
-
-    var records = data.map(function(user) {
-      var record = new User({username: user});
-      return record;
-    });
-
-    deferred.resolve(records);
-
-  }, function() {
-    deferred.reject();
-  });
-
-  return deferred.promise;
-};
-
-
+}, config.api + 'user');
