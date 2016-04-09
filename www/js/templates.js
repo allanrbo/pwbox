@@ -17,3 +17,36 @@ Templates.navigation = function() {
   )
 
 };
+
+Templates.usersSelector = function(users, selectedUsernames) {
+
+  var setSelectedUsers = function() {
+    var current = selectedUsernames();
+    var index = current.indexOf(this.value);
+
+    if(index == -1 && this.checked) {
+      current.push(this.value);
+    }
+    else if(index > -1 && !this.checked) {
+      current.splice(index, 1);
+    }
+
+    selectedUsernames(current);
+  };
+
+
+  return m(".users-selector", 
+    m("ul", [
+      users().map(function(user) {
+
+        return m("li",
+          m("label", [
+            m("input", { type: "checkbox", checked: selectedUsernames().indexOf(user.username()) > -1, value: user.username(), onclick: setSelectedUsers } ),
+            " " + user.username()
+          ])
+        ) 
+      })
+    ])
+  );
+
+}
