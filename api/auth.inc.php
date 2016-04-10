@@ -61,6 +61,7 @@ function extractTokenFromHeader() {
     $token = substr($authHeader, strlen("Bearer "));
     $tokenRaw = base64_decode($token);
 
+    // Check whether the token was signed by us
     $json = null;
     try {
         $json = gpgDecryptSecret("system", null, $tokenRaw);
@@ -70,11 +71,23 @@ function extractTokenFromHeader() {
         exit();
     }
 
+    // Ensure whether the token is expired
     $authInfo = json_decode($json, true);
     if($authInfo["expire"] < getUtcTime()) {
         http_response_code(401);
         echo json_encode(["status" => "error", "message" => "Expired auth token."]);
         exit();
+    }
+
+    // Ensure that the password in the token is still valid
+    try {
+        gpgEncryptSecret($authInfo["username"], $authInfo["password"], [$authInfo["username"]], "dummy");
+    } catch (Exception $e) {
+        if(strpos($e->getMessage(), "bad passphrase") !== false) {
+            echo json_encode(["status" => "error", "message" => "Invalid auth token. User password has changed."]);
+            exit();
+        }
+        throw $e;
     }
 
     return $authInfo;
