@@ -1,6 +1,8 @@
 var SecretEdit = {
 
   controller: function() {
+    console.log('controller');
+
     var self = this;
 
     // Variables
@@ -28,7 +30,6 @@ var SecretEdit = {
     };
 
     // Initialize controller
-    m.startComputation();
     var promises = [];
 
     // Setup all users
@@ -37,17 +38,26 @@ var SecretEdit = {
 
     // Setup secret
     if(m.route.param('id')) {
-      var secretPromise = Secret.get( m.route.param('id') ).then(this.secret);
+      var secretPromise = Secret.get( m.route.param('id') ).then(function(secret) {
+        self.secret(secret);
+      });
+
       promises.push(secretPromise);
     }
 
+    m.startComputation();
+
     m.sync(promises).then(function(args) {
+      console.log('promises done');
+      console.debug('self.secret', self.secret());
       m.endComputation();
     });
 
   },
 
   view: function(ctrl) {
+    console.debug(ctrl.secret());
+
     var inputField = function(text, field) { 
       return m(".pure-control-group", [
         m("label", text),

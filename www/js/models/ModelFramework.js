@@ -6,7 +6,6 @@ var ModelFramework = function(model, endpoint) {
   // Methods
   model.prototype.save = function() {
     var self = this;
-    console.log(model());
 
     return m.request({
       method: self.id() ? "PUT" : "POST",
@@ -41,20 +40,31 @@ var ModelFramework = function(model, endpoint) {
 
   // Static methods
   model.get = function(id) {
-    return m.request({
+
+    var deferred = m.deferred();
+
+    m.request({
       method: "GET",
       url: endpoint + "/" + id,
       config: xhrConfig,
-      type: model
-    }).then(function() {}, function() {
+      background: true
+
+    }).then(function(data) { 
+      var record = new model(data);
+
+      deferred.resolve(record);
+
+    }, function() {
       
       // Not logged in
       Session.logout();
       m.route('/login');
 
-
+      deferred.reject();
 
     });
+
+    return deferred.promise;
   };
 	
 
