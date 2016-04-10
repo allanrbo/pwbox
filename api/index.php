@@ -11,8 +11,6 @@ corsAllowAll();
 
 header("Content-Type: application/json");
 
-ensurePermissions();
-
 $method = $_SERVER["REQUEST_METHOD"];
 $uriPrefix = getconfig()["uriPrefix"];
 $uri = $_SERVER["REQUEST_URI"];
@@ -48,7 +46,8 @@ if($method == "POST" && $uri == "/authenticate") {
  * User creation endpoint
  */
 if($method == "POST" && $uri == "/user") {
-    writelog("Requested POST on $uri");
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
 
     $data = json_decode(file_get_contents("php://input"), true);
 
@@ -71,6 +70,37 @@ if($method == "POST" && $uri == "/user") {
     }
 
     gpgCreateUser($data["username"], $data["password"]);
+    echo json_encode(["status" => "ok"]);
+    exit();
+}
+
+
+/*
+ * User password update endpoint
+ */
+
+$matches = null;
+if($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    $username = $matches[1];
+
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if($username != $authInfo["username"]) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Only allowed to change password on own user."]);
+        exit();
+    }
+
+    if(!gpgPassphraseValid($data["password"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "New password is invalid."]);
+        exit();
+    }
+
+    gpgChangePassphrase($username, $authInfo["password"], $data["password"]);
     echo json_encode(["status" => "ok"]);
     exit();
 }

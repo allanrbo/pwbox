@@ -60,7 +60,8 @@ function gpgUsernameValid($username) {
 
 
 function gpgPassphraseValid($passphrase) {
-    if(preg_match("/[^[:graph:] ]/", $passphrase)) {
+    // Allow only printable ASCII as password
+    if(preg_match("/[^\\x20-\\x7E]/", $passphrase)) {
         return false;
     }
     return true;
@@ -126,6 +127,111 @@ function gpgCreateUser($username, $passphrase) {
     }
 
     gpgInvoke("--gen-key", $batch);
+}
+
+
+function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
+    // Unfortunately a way to change password in GnuPG via batch mode was not found.
+    // Thefore an Expect-script was used.
+
+    writelog("Changing passphrase for user with username: $username");
+
+    if(!gpgUserExists($username)) {
+        throw new Exception("User does not exists: $username.");
+    }
+
+    if(!gpgPassphraseValid($oldPassphrase)) {
+        throw new Exception("Invalid old passphrase.");
+    }
+
+    if(!gpgPassphraseValid($newPassphrase)) {
+        throw new Exception("Invalid new passphrase.");
+    }
+
+    // Getconfig has validated this path. Further escape it for the Expect script.
+    $gpghome = getconfig()["gpghome"];
+    $gpghomeEscaped = str_replace("\"", "\\\"", $gpghome);
+
+    $descriptorspec = [
+        0 => ["pipe", "r"],
+        1 => ["pipe", "w"],
+        2 => ["pipe", "w"],
+    ];
+
+    $pipes = null;
+    $fullCmd = "/usr/bin/expect";
+    writelog("Invoking expect: " . $fullCmd);
+    $process = proc_open($fullCmd, $descriptorspec, $pipes);
+
+    if(!is_resource($process)) {
+        throw new Exception("Could not start expect process");
+    }
+
+    // Escape for the Expect-script
+    $oldPassphraseEscaped = str_replace("\"", "\\\"", $oldPassphrase);
+    $newPassphraseEscaped = str_replace("\"", "\\\"", $newPassphrase);
+
+    $stdin = "
+        set timeout 10
+
+        spawn /usr/bin/gpg --home \"$gpghomeEscaped\" --edit-key \"$username\" passwd
+
+        expect {
+            \"Enter passphrase:\" { }
+            timeout { exit 100 }
+        }
+
+        send \"$oldPassphraseEscaped\\r\"
+
+        expect {
+            \"Enter the new passphrase for this secret key.\" { }
+            timeout { exit 101 }
+        }
+
+        expect {
+            \"Enter passphrase:\" { }
+            timeout { exit 102 }
+        }
+
+        send \"$newPassphraseEscaped\\r\"
+
+        expect {
+            \"Repeat passphrase:\" { }
+            timeout { exit 103 }
+        }
+
+        send \"$newPassphraseEscaped\\r\"
+
+        expect {
+            \"gpg>\" { }
+            timeout { exit 104 }
+        }
+
+        send \"save\\r\"
+
+        expect {
+            eof { }
+            timeout { exit 105 }
+        }
+
+        set waitval [wait]
+        set exitval [lindex \$waitval 3]
+        exit \$exitval
+    ";
+
+    fwrite($pipes[0], $stdin);
+    fclose($pipes[0]);
+
+    $output = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+
+    $retval = proc_close($process);
+    if($retval != 0) {
+        throw new Exception("Expect returned $retval.");
+    }
 }
 
 

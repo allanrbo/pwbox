@@ -12,12 +12,13 @@ function getconfig() {
         }
     }
 
+    ensurePermissions($config);
+
     return $config;
 }
 
 
-function ensurePermissions() {
-    $config = getconfig();
+function ensurePermissions($config) {
     $uid = posix_geteuid();
 
     if(!file_exists($config["logPath"])) {
