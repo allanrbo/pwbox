@@ -10,6 +10,7 @@ m.route(document.body, "/secrets", {
   "/secrets": SecretList,
   "/secrets/:id": SecretEdit,
   "/secrets/new": SecretEdit,
+  "/adminmenu": AdminMenu,
   "/user": UserEdit,
   "/change-my-password": ChangeMyPassword,
   "/logout": {

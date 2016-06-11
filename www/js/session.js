@@ -17,19 +17,16 @@ var Session = function() {
   var login = function(user, password) {
       return m.request({
         method: "POST",
-        url: "http://46.101.38.96/api/authenticate",
+        url: config.api + "authenticate",
         data: {
           username: user,
           password: password
         }
-
       }).then(function(data) {
         username(user);
         token(data.token);
-
       }, function(a) {
         logout();
-
       });
   };
 
@@ -46,4 +43,3 @@ var Session = function() {
   }
 
 }();
-
