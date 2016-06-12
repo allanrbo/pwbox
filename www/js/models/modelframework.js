@@ -1,106 +1,94 @@
 var ModelFramework = function(model, endpoint) {
 
-	model.endpoint = endpoint;
+    model.endpoint = endpoint;
 
+    // Methods
+    model.prototype.save = function() {
+        var self = this;
 
-  // Methods
-  model.prototype.save = function() {
-    var self = this;
+        return m.request({
+            method: self.id() ? "PUT" : "POST",
+            url: endpoint + (self.id() ? "/" + self.id() : ""),
+            data: this.dataSave(),
+            config: xhrConfig
+        });
+    };
 
-    return m.request({
-      method: self.id() ? "PUT" : "POST",
-      url: endpoint + (self.id() ? "/" + self.id() : ""),
-      data: this.dataSave(),
-      config: xhrConfig
-    });
-  };
+    model.prototype.dataSave = function() {
+        var self = this;
 
-  model.prototype.dataSave = function() {
-    var self = this;
-
-    var output = {}; 
-    this.saveFields.forEach(function(key) {
-      output[key] = self[key];
-    });
-    return output;
-  }
-
-  model.prototype.delete = function() {
-    if(!this.id()) {
-      console.error("Cannot delete Secret that is not saved.");
-      return;
+        var output = {};
+        this.saveFields.forEach(function(key) {
+            output[key] = self[key];
+        });
+        return output;
     }
 
-    return m.request({
-      method: "DELETE",
-      url: endpoint + "/" + this.id(),
-      config: xhrConfig
-    });
-  }
+    model.prototype.delete = function() {
+        if (!this.id()) {
+            console.error("Cannot delete Secret that is not saved.");
+            return;
+        }
 
-  // Static methods
-  model.get = function(id) {
+        return m.request({
+            method: "DELETE",
+            url: endpoint + "/" + this.id(),
+            config: xhrConfig
+        });
+    }
 
-    var deferred = m.deferred();
+    // Static methods
+    model.get = function(id) {
 
-    m.request({
-      method: "GET",
-      url: endpoint + "/" + id,
-      config: xhrConfig,
-      background: true
+        var deferred = m.deferred();
 
-    }).then(function(data) { 
-      var record = new model(data);
+        m.request({
+            method: "GET",
+            url: endpoint + "/" + id,
+            config: xhrConfig,
+            background: true
+        }).then(function(data) {
+            var record = new model(data);
+            deferred.resolve(record);
+        }, function() {
+            // Not logged in
+            Session.logout();
+            m.route('/login');
+            deferred.reject();
+        });
 
-      deferred.resolve(record);
+        return deferred.promise;
+    };
 
-    }, function() {
-      
-      // Not logged in
-      Session.logout();
-      m.route('/login');
 
-      deferred.reject();
+    model.all = function() {
+        var deferred = m.deferred();
 
-    });
+        m.request({
+            method: "GET",
+            url: endpoint,
+            config: xhrConfig,
+            background: true
+        }).then(function(data) {
+            var records = data.map(function(secret) {
+                return new model(secret);
+            });
+            deferred.resolve(records);
+        }, function(b, c) {
 
-    return deferred.promise;
-  };
-	
+            if (b.message.indexOf('auth') > -1) {
+                // Not logged in
+                Session.logout();
+                m.route('/login');
+                m.endComputation();
+            }
 
-  model.all = function() {
-    var deferred = m.deferred();
+            deferred.reject();
+        });
 
-    m.request({
-      method: "GET",
-      url: endpoint,
-      config: xhrConfig,
-      background: true
+        return deferred.promise;
+    };
 
-    }).then(function(data) {
 
-      var records = data.map(function(secret) {
-        return new model(secret);
-      });
-
-      deferred.resolve(records);
-
-    }, function(b,c) {
-
-      if(b.message.indexOf('auth') > -1) {
-        // Not logged in
-        Session.logout();
-        m.route('/login');
-        m.endComputation();
-
-      }
-
-      deferred.reject();
-    });
-
-    return deferred.promise;
-  };
-
-	
-	return model;
+    return model;
 };
