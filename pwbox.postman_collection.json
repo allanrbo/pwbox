@@ -1,0 +1,163 @@
+{
+	"variables": [],
+	"info": {
+		"name": "pwbox",
+		"_postman_id": "8e334b6d-70a8-5656-0bff-db22b006d57b",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "secret",
+			"request": {
+				"url": "{{endpoint}}/api/secret",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"some secret 3\",\n    \"password\": \"superrock\",\n    \"expiry\": \"1234\",\n    \"notes\": \"hello world. Notice the nice notes.\"\n}\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "authenticate",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"var data = JSON.parse(responseBody);\r",
+							"postman.setEnvironmentVariable(\"token\", data.token);"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "{{endpoint}}/api/authenticate",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user123\",\n    \"password\": \"pass123\"\n}\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "user",
+			"request": {
+				"url": "{{endpoint}}/api/user",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user123\",\n    \"password\": \"pass123\"\n}\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "secret",
+			"request": {
+				"url": "{{endpoint}}/api/secret",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"service1\",\n    \"additionalRecipients\": [],\n    \"username\": \"hellouser\",\n    \"password\": \"hello123\"\n}\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "secret/:secretId",
+			"request": {
+				"url": "{{endpoint}}/api/secret/56f42dc51bb6e",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"some secret 3\",\n    \"password\": \"superrock\",\n    \"expiry\": \"1234\",\n    \"notes\": \"hello world. Notice the nice notes.\"\n}\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "user",
+			"request": {
+				"url": "{{endpoint}}/api/user",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"some secret 3\",\n    \"password\": \"superrock\",\n    \"expiry\": \"1234\",\n    \"notes\": \"hello world. Notice the nice notes.\"\n}\n"
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

@@ -75,23 +75,21 @@ var SecretEdit = {
                 selectedUsernames(current);
             };
 
-            return m(".users-selector",
-                m("ul", [
-                    users().map(function(user) {
-                        return m("li",
-                            m("label", [
-                                m("input", {
-                                    type: "checkbox",
-                                    checked: selectedUsernames().indexOf(user.username()) > -1,
-                                    value: user.username(),
-                                    onclick: setSelectedUsers
-                                }),
-                                " " + user.username()
-                            ])
-                        );
-                    })
-                ])
-            );
+            return m(".pure-controls .radio-group", [
+                users().map(function(user) {
+                    return m("div",
+                        m("label", [
+                            m("input", {
+                                type: "checkbox",
+                                checked: selectedUsernames().indexOf(user.username()) > -1,
+                                value: user.username(),
+                                onclick: setSelectedUsers
+                            }),
+                            " " + user.username()
+                        ])
+                    );
+                })
+            ]);
         }
 
         return m("#applayout", [
@@ -104,10 +102,14 @@ var SecretEdit = {
 
                     m("form.pure-form.pure-form-aligned",
                         m("fieldset", [
-                            inputField("Title", ctrl.secret().title),
+                            inputField("Name", ctrl.secret().title),
                             inputField("Username", ctrl.secret().username),
                             inputField("Password", ctrl.secret().password),
                             inputField("Notes", ctrl.secret().notes),
+
+                            m(".pure-control-group", [
+                                m("label", "Users")
+                            ]),
 
                             usersSelector(ctrl.allUsers, ctrl.secret().recipients),
 

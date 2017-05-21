@@ -5,9 +5,6 @@ require("logging.inc.php");
 require("errorhandling.inc.php");
 require("gpg.inc.php");
 require("auth.inc.php");
-require("cors.inc.php");
-
-corsAllowAll();
 
 header("Content-Type: application/json");
 
@@ -78,7 +75,6 @@ if($method == "POST" && $uri == "/user") {
 /*
  * User password update endpoint
  */
-
 $matches = null;
 if($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
@@ -138,6 +134,7 @@ if($method == "POST" && $uri == "/secret") {
 
     unset($data["recipients"]);
     unset($data["id"]);
+    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
 
     $secretId = gpgCreateSecretFile($authInfo["username"], $authInfo["password"], $recipients, json_encode($data));
     echo json_encode(["status" => "ok", "id" => $secretId]);
@@ -163,6 +160,7 @@ if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 
     unset($data["recipients"]);
     unset($data["id"]);
+    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
 
     $secretId = gpgUpdateSecretFile($authInfo["username"], $authInfo["password"], $recipients, $secretId, json_encode($data));
     echo json_encode(["status" => "ok", "id" => $secretId]);

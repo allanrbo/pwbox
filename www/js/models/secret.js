@@ -8,6 +8,7 @@ var Secret = ModelFramework(function(content) {
     this.password = m.prop(content.password || "");
     this.notes = m.prop(content.notes || "");
     this.recipients = m.prop(content.recipients || []);
+    this.modified = m.prop(content.modified || "");
 
     this.saveFields = ['title', 'username', 'password', 'notes', 'recipients'];
 

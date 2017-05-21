@@ -335,7 +335,17 @@ function gpgListAllSecretFiles($username, $passphrase) {
             $title = $secret["title"];
         }
 
-        $r[] = ["id" => $file, "title" => $title, "recipients" => $recipients];
+        $modified = "";
+        if(isset($secret["modified"])) {
+            $modified = $secret["modified"];
+        }
+
+        $r[] = [
+            "id" => $file,
+            "title" => $title,
+            "recipients" => $recipients,
+            "modified" => $modified,
+        ];
     }
 
     return $r;

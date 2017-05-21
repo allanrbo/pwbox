@@ -12,20 +12,6 @@ var SecretList = {
             m.route("/secrets/" + id);
         };
 
-        this.deleteSecret = function(id) {
-            if (confirm("Confirm delete")) {
-                m.startComputation();
-
-                Secret.get(id).then(function(secret) {
-                    secret.delete().then(function() {
-                        self.deleteMessage("Deleted");
-                        self.loadSecrets();
-                        m.endComputation();
-                    });
-                })
-            }
-        };
-
         this.loadSecrets = function() {
             m.startComputation();
             Secret.all().then(function(secrets) {
@@ -51,8 +37,8 @@ var SecretList = {
                     m('table.pure-table.pure-table-horizontal', [
                         m("thead",
                             m('tr', [
-                                m('th', 'Title'),
-                                m('th', '')
+                                m('th', 'Name'),
+                                m('th', 'Modified')
                             ])
                         ),
 
@@ -62,10 +48,7 @@ var SecretList = {
                                     "data-id": secret.id(),
                                     onclick: m.withAttr("data-id", ctrl.editSecret)
                                 }, secret.title())),
-                                m('td', m('a', {
-                                    "data-id": secret.id(),
-                                    onclick: m.withAttr("data-id", ctrl.deleteSecret)
-                                }, "Delete")),
+                                m('td', secret.modified()),
                             ])
                         })
                     ])
