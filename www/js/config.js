@@ -1,3 +1,0 @@
-var config = {
-    api: '/api/'
-};

@@ -17,6 +17,37 @@ if(strpos($uri, $uriPrefix) !== 0) {
 $uri = substr($uri, strlen($uriPrefix));
 
 
+
+
+/*
+ * test endpoint
+ */
+if($method == "GET" && $uri == "/test1") {
+    //echo "\"" + microtime() + "\""; //json_encode([1,2,3]);
+    echo json_encode([
+        ["id" => 1, "firstName" => "fn1", "lastName" => "ln1"],
+        ["id" => 2, "firstName" => "fn2", "lastName" => "ln2"]
+    ]);
+    exit();
+}
+
+$matches = null;
+if($method == "GET" && preg_match("/\/test1\/([A-Za-z0-9]+)/", $uri, $matches)) {
+    echo json_encode(
+        ["firstName" => "fn1", "lastName" => "ln1"]
+    );
+    exit();
+}
+
+$matches = null;
+if($method == "PUT" && preg_match("/\/test1\/([A-Za-z0-9]+)/", $uri, $matches)) {
+    echo json_encode(["status" => "ok"]);
+    exit();
+}
+
+
+
+
 /*
  * Authentication endpoint
  */
@@ -44,7 +75,7 @@ if($method == "POST" && $uri == "/authenticate") {
  */
 if($method == "POST" && $uri == "/user") {
     writelog("Requested $method on $uri");
-    $authInfo = extractTokenFromHeader();
+    //$authInfo = extractTokenFromHeader();
 
     $data = json_decode(file_get_contents("php://input"), true);
 
@@ -147,6 +178,10 @@ if($method == "POST" && $uri == "/secret") {
  */
 $matches = null;
 if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
+
+    // TODO disallow creation of secrets on PUT endpoint with custom ID
+    // TODO disallow overwrite of other's secrets
+
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 

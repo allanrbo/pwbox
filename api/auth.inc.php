@@ -54,7 +54,7 @@ function extractTokenFromHeader() {
     $authHeader = $_SERVER["HTTP_AUTHORIZATION"];
     if(strpos($authHeader, "Bearer ") !== 0) {
         http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Unsupported auth type."]);
+        echo json_encode(["status" => "unauthorized", "message" => "Unsupported auth type."]);
         exit();
     }
 
@@ -67,7 +67,7 @@ function extractTokenFromHeader() {
         $json = gpgDecryptSecret("system", null, $tokenRaw);
     } catch (Exception $e) {
         http_response_code(401);
-        echo json_encode(["status" => "error", "message" => "Invalid auth token."]);
+        echo json_encode(["status" => "unauthorized", "message" => "Invalid auth token."]);
         exit();
     }
 
@@ -75,7 +75,7 @@ function extractTokenFromHeader() {
     $authInfo = json_decode($json, true);
     if($authInfo["expire"] < getUtcTime()) {
         http_response_code(401);
-        echo json_encode(["status" => "error", "message" => "Expired auth token."]);
+        echo json_encode(["status" => "unauthorized", "message" => "Expired auth token."]);
         exit();
     }
 
@@ -84,7 +84,7 @@ function extractTokenFromHeader() {
         gpgEncryptSecret($authInfo["username"], $authInfo["password"], [$authInfo["username"]], "dummy");
     } catch (Exception $e) {
         if(strpos($e->getMessage(), "bad passphrase") !== false) {
-            echo json_encode(["status" => "error", "message" => "Invalid auth token. User password has changed."]);
+            echo json_encode(["status" => "unauthorized", "message" => "Invalid auth token. User password has changed."]);
             exit();
         }
         throw $e;

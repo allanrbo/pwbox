@@ -4,7 +4,7 @@ A password manager in development.
 Installation
 ---
 
-    apt-get install gpgv haveged git apache2 php5
+    apt-get install gpgv haveged git apache2 libapache2-mod-php5 rng-tools
     apt-get install --no-install-recommends expect
 
     cd /
