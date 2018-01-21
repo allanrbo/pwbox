@@ -36,6 +36,10 @@ a {
     color: #595f72;
 }
 
+.pure-form.pure-form-aligned input[type=text], .pure-form.pure-form-aligned input[type=password], .pure-form.pure-form-aligned textarea {
+    width: 13.5em;
+}
+
 .login-form * {
     box-sizing: border-box;
 }
@@ -50,6 +54,12 @@ a {
     width: 6em;
 }
 
-.login-form.pure-form-aligned  .pure-controls {
+.login-form.pure-form-aligned .pure-controls {
     margin-left: 7em;
+}
+
+@media only screen and (max-width : 480px) {
+    .login-form.pure-form-aligned .pure-controls {
+        margin: 0;
+    }
 }

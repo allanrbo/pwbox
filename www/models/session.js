@@ -32,5 +32,9 @@ var Session = {
 
     getToken: function() {
         return localStorage.getItem("token");
+    },
+
+    getUsername: function() {
+        return localStorage.getItem("username");
     }
 }

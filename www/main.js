@@ -23,5 +23,6 @@ m.route(document.body, "/secrets", {
     "/login": { render: function() { return m(LoginForm); } },
     "/secrets": { render: function() { return m(Layout, m(SecretList)); } },
     "/secrets/:key": { render: function(vnode) { return m(Layout, vnode.attrs, m(SecretForm, vnode.attrs)); } },
+    "/admin": { render: function() { return m(Layout, m(AdminMenu)); } },
     "/logout": { render: function() { Session.logout(); m.route.set("/login"); } }
 });

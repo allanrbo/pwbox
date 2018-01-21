@@ -17,37 +17,6 @@ if(strpos($uri, $uriPrefix) !== 0) {
 $uri = substr($uri, strlen($uriPrefix));
 
 
-
-
-/*
- * test endpoint
- */
-if($method == "GET" && $uri == "/test1") {
-    //echo "\"" + microtime() + "\""; //json_encode([1,2,3]);
-    echo json_encode([
-        ["id" => 1, "firstName" => "fn1", "lastName" => "ln1"],
-        ["id" => 2, "firstName" => "fn2", "lastName" => "ln2"]
-    ]);
-    exit();
-}
-
-$matches = null;
-if($method == "GET" && preg_match("/\/test1\/([A-Za-z0-9]+)/", $uri, $matches)) {
-    echo json_encode(
-        ["firstName" => "fn1", "lastName" => "ln1"]
-    );
-    exit();
-}
-
-$matches = null;
-if($method == "PUT" && preg_match("/\/test1\/([A-Za-z0-9]+)/", $uri, $matches)) {
-    echo json_encode(["status" => "ok"]);
-    exit();
-}
-
-
-
-
 /*
  * Authentication endpoint
  */
@@ -167,7 +136,9 @@ if($method == "POST" && $uri == "/secret") {
     unset($data["id"]);
     $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
 
-    $secretId = gpgCreateSecretFile($authInfo["username"], $authInfo["password"], $recipients, json_encode($data));
+    $secretId = uniqid();
+    $data["id"] = $secretId;
+    gpgUpdateSecretFile($authInfo["username"], $authInfo["password"], $recipients, $secretId, json_encode($data));
     echo json_encode(["status" => "ok", "id" => $secretId]);
     exit();
 }
@@ -178,14 +149,21 @@ if($method == "POST" && $uri == "/secret") {
  */
 $matches = null;
 if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
-
-    // TODO disallow creation of secrets on PUT endpoint with custom ID
-    // TODO disallow overwrite of other's secrets
-
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
     $secretId = $matches[1];
+
+    // Ensure the secret exists already
+    $secretsPath = getconfig()["secretsPath"];
+    if(!file_exists("$secretsPath/$secretId")) {
+        http_response_code(404);
+        echo json_encode(["status" => "notFound"]);
+        exit();
+    }
+
+    // Read the old secret to ensure that the user currently has access to the secret being updated
+    gpgGetSecretFile($authInfo["username"], $authInfo["password"], $secretId);
 
     $data = json_decode(file_get_contents("php://input"), true);
     $recipients = [$authInfo["username"]];
@@ -225,6 +203,7 @@ if($method == "GET" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 
     $secretId = $matches[1];
 
+    // Ensure the secret exists
     $secretsPath = getconfig()["secretsPath"];
     if(!file_exists("$secretsPath/$secretId")) {
         http_response_code(404);

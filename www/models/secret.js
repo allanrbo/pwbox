@@ -44,5 +44,25 @@ var Secret = {
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
+    },
+
+    delete: function() {
+        var method = "DELETE";
+        return m.request({
+            method: method,
+            url: "/api/secret/" + Secret.current.id,
+            config: xhrConfig
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    toggleRecipient: function(username) {
+        var recipientIndex = Secret.current.recipients.indexOf(username);
+        if (recipientIndex > -1) {
+            Secret.current.recipients.splice(recipientIndex, 1);
+        } else {
+            Secret.current.recipients.push(username);
+        }
     }
 }

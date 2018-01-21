@@ -27,7 +27,8 @@ var Layout = {
         ]);
 
         // This hamburger-menu logic is based on Pure.css's responsive side menu ui.js
-        var toggleMenu = function() {
+        var toggleMenu = function(e) {
+            e.preventDefault();
             layout.dom.classList.toggle("active");
             menu.dom.classList.toggle("active");
             hamburgerLink.dom.classList.toggle("active");
@@ -35,9 +36,9 @@ var Layout = {
 
         hamburgerLink.attrs.onclick = toggleMenu;
 
-        contentArea.attrs.onclick = function() {
+        contentArea.attrs.onclick = function(e) {
             if (menu.dom.classList.contains("active")) {
-                toggleMenu();
+                toggleMenu(e);
             }
         };
 

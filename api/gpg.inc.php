@@ -301,12 +301,6 @@ function gpgRecipientsFromCiphertext($ciphertext) {
 }
 
 
-function gpgCreateSecretFile($signUser, $signUserPassphrase, $recipientUsernames, $text) {
-    $secretId = uniqid();
-    return gpgUpdateSecretFile($signUser, $signUserPassphrase, $recipientUsernames, $secretId, $text);
-}
-
-
 function gpgUpdateSecretFile($signUser, $signUserPassphrase, $recipientUsernames, $secretId, $text) {
     $ciphertext = gpgEncryptSecret($signUser, $signUserPassphrase, $recipientUsernames, $text);
     file_put_contents(getconfig()["secretsPath"] . "/" . $secretId, $ciphertext);
@@ -335,6 +329,11 @@ function gpgListAllSecretFiles($username, $passphrase) {
             $title = $secret["title"];
         }
 
+        $recusername = "";
+        if(isset($secret["username"])) {
+            $recusername = $secret["username"];
+        }
+
         $modified = "";
         if(isset($secret["modified"])) {
             $modified = $secret["modified"];
@@ -343,6 +342,7 @@ function gpgListAllSecretFiles($username, $passphrase) {
         $r[] = [
             "id" => $file,
             "title" => $title,
+            "username" => $recusername,
             "recipients" => $recipients,
             "modified" => $modified,
         ];

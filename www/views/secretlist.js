@@ -16,12 +16,16 @@ var SecretList = {
             m("table.pure-table.pure-table-horizontal", [
                 m("thead", [
                     m("tr", [
-                        m("th", "Title")
+                        m("th", "Title"),
+                        m("th", "Username"),
+                        m("th", "Modified"),
                     ])
                 ]),
                 m("tbody", Secret.list.map(function(row) {
                     return m("tr", [
-                        m("td", m("a", {href: "/secrets/" + row.id, oncreate: m.route.link}, row.title))
+                        m("td", m("a", {href: "/secrets/" + row.id, oncreate: m.route.link}, row.title)),
+                        m("td", row.username),
+                        m("td", row.modified),
                     ]);
                 }))
             ]),
