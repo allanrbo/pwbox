@@ -6,8 +6,7 @@ var Layout = {
                 m("a.pure-menu-heading[href=#]", "PwBox"),
 
                 m("ul.pure-menu-list", [
-                    m("li.pure-menu-item.pure-menu-selected", m("a.pure-menu-link[href=/secrets]", {oncreate: m.route.link}, "List Secrets")),
-                    m("li.pure-menu-item", m("a.pure-menu-link[href=/secrets/new]", {oncreate: m.route.link}, "New Secret")),
+                    m("li.pure-menu-item.pure-menu-selected", m("a.pure-menu-link[href=/secrets]", {oncreate: m.route.link}, "Secrets")),
                     m("li.pure-menu-item", m("a.pure-menu-link[href=/admin]", {oncreate: m.route.link}, "Admin")),
                     m("li.pure-menu-item.menu-item-divided"),
                     m("li.pure-menu-item", m("a.pure-menu-link[href=/logout]", {oncreate: m.route.link}, "Log out")),

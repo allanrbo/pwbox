@@ -28,6 +28,8 @@ var SecretList = {
         return [
             m("h2.content-subhead", "Secrets"),
 
+            m("p", m("a[href=/secrets/new]", {oncreate: m.route.link}, "New Secret")),
+
             m("form.pure-form.pure-form-aligned", [
                 m("input#searchbox[type=text][autofocus]", {oncreate: function(vnode) { setTimeout(function() { vnode.dom.focus(); }, 0); } }),
                 " ",

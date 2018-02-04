@@ -27,6 +27,7 @@ var GroupList = {
 
         return [
             m("h2.content-subhead", "Groups"),
+            m("p", m("a[href=/groups/new]", {oncreate: m.route.link}, "New group")),
             m("p", "You may only edit groups you are member of."),
             table
         ];
