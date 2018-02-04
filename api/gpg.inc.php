@@ -51,6 +51,7 @@ function gpgInvoke($cmd, $stdin = "", $passphrase = null, $getStdErr = false, $a
 
 
 function gpgUsernameValid($username) {
+    if(!isset($username)) return false;
     if(strlen($username) == 0) return false;
     if(preg_match("/[^a-zA-Z0-9]/", $username)) {
         return false;
@@ -301,20 +302,12 @@ function gpgRecipientsFromCiphertext($ciphertext) {
 }
 
 
-function gpgUpdateSecretFile($signUser, $signUserPassphrase, $recipientUsernames, $secretId, $text) {
-    $ciphertext = gpgEncryptSecret($signUser, $signUserPassphrase, $recipientUsernames, $text);
-    file_put_contents(getconfig()["secretsPath"] . "/" . $secretId, $ciphertext);
-    return $secretId;
-}
-
-
-function gpgListAllSecretFiles($username, $passphrase) {
-    $secretsPath = getconfig()["secretsPath"];
-    $secretsFiles = array_diff(scandir($secretsPath), [".", ".."]);
+function gpgListAllSecretFiles($username, $passphrase, $directory) {
+    $secretsFiles = array_diff(scandir($directory), [".", ".."]);
 
     $r = [];
     foreach ($secretsFiles as $file) {
-        $ciphertext = file_get_contents("$secretsPath/$file");
+        $ciphertext = file_get_contents("$directory/$file");
 
         $recipients = gpgRecipientsFromCiphertext($ciphertext);
         if(!in_array($username, $recipients)) {
@@ -339,11 +332,16 @@ function gpgListAllSecretFiles($username, $passphrase) {
             $modified = $secret["modified"];
         }
 
+        $groups = [];
+        if(isset($secret["groups"])) {
+            $groups = $secret["groups"];
+        }
+
         $r[] = [
             "id" => $file,
             "title" => $title,
             "username" => $recusername,
-            "recipients" => $recipients,
+            "groups" => $groups,
             "modified" => $modified,
         ];
     }
@@ -352,9 +350,8 @@ function gpgListAllSecretFiles($username, $passphrase) {
 }
 
 
-function gpgGetSecretFile($username, $passphrase, $secretId) {
-    $secretsPath = getconfig()["secretsPath"];
-    $ciphertext = file_get_contents("$secretsPath/$secretId");
+function gpgGetSecretFile($username, $passphrase, $path) {
+    $ciphertext = file_get_contents($path);
 
     $recipients = gpgRecipientsFromCiphertext($ciphertext);
     if(!in_array($username, $recipients)) {

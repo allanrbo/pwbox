@@ -1,5 +1,6 @@
 var User = {
     list: [],
+    current: {},
 
     loadList: function() {
         return m.request({
@@ -9,6 +10,24 @@ var User = {
         })
         .then(function(result) {
             User.list = result;
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    save: function() {
+        var method = "POST";
+        var url = "/api/user";
+        if (User.current.id) {
+            method = "PUT";
+            url = "/api/user/" + User.current.id;
+        }
+
+        return m.request({
+            method: method,
+            url: url,
+            data: User.current,
+            config: xhrConfig
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);

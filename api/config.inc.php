@@ -55,7 +55,7 @@ function ensurePermissions($config) {
         $r = @mkdir($config["secretsPath"], 0700, true);
         if($r === false) {
             http_response_code(500);
-            echo json_encode(["error" => "Internal error. Failed to create GPG home directory."]);
+            echo json_encode(["error" => "Internal error. Failed to create secrets directory."]);
             exit();
         }
     }
@@ -63,6 +63,22 @@ function ensurePermissions($config) {
     if(fileowner($config["secretsPath"]) != $uid) {
         http_response_code(500);
         echo json_encode(["error" => "Internal error. Not owner of secrets directory."]);
+        exit();
+    }
+
+
+    if(!file_exists($config["groupsPath"])) {
+        $r = @mkdir($config["groupsPath"], 0700, true);
+        if($r === false) {
+            http_response_code(500);
+            echo json_encode(["error" => "Internal error. Failed to create groups directory."]);
+            exit();
+        }
+    }
+
+    if(fileowner($config["groupsPath"]) != $uid) {
+        http_response_code(500);
+        echo json_encode(["error" => "Internal error. Not owner of groups directory."]);
         exit();
     }
 }

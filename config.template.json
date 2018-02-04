@@ -3,5 +3,6 @@
     "logPath": "/pwbox/data/logs",
     "gpghome": "/pwbox/data/gpghome",
     "secretsPath": "/pwbox/data/secrets",
+    "groupsPath": "/pwbox/data/groups",
     "tokenExpiryMinutes": 45
 }

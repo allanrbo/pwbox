@@ -1,28 +1,28 @@
-var Secret = {
+var Group = {
     list: [],
     current: {},
 
     loadList: function() {
         return m.request({
             method: "GET",
-            url: "/api/secret",
+            url: "/api/group",
             config: xhrConfig
         })
         .then(function(result) {
-            Secret.list = result;
+            Group.list = result;
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
     },
 
-    load: function(id) {
+    load: function(name) {
         return m.request({
             method: "GET",
-            url: "/api/secret/" + id,
+            url: "/api/group/" + name,
             config: xhrConfig
         })
         .then(function(result) {
-            Secret.current = result;
+            Group.current = result;
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
@@ -30,16 +30,16 @@ var Secret = {
 
     save: function() {
         var method = "POST";
-        var url = "/api/secret";
-        if (Secret.current.id) {
+        var url = "/api/group";
+        if (Group.current.modified) {
             method = "PUT";
-            url = "/api/secret/" + Secret.current.id;
+            url = "/api/group/" + Group.current.name;
         }
 
         return m.request({
             method: method,
             url: url,
-            data: Secret.current,
+            data: Group.current,
             config: xhrConfig
         })
         .catch(handleUnauthorized)
@@ -50,23 +50,23 @@ var Secret = {
         var method = "DELETE";
         return m.request({
             method: method,
-            url: "/api/secret/" + Secret.current.id,
+            url: "/api/group/" + Group.current.name,
             config: xhrConfig
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
     },
 
-    toggleGroup: function(group) {
-        if (Secret.current.groups == null) {
-            Secret.current.groups = [];
+    toggleMember: function(username) {
+        if (Group.current.members == null) {
+            Group.current.members = [];
         }
 
-        var groupIndex = Secret.current.groups.indexOf(group);
-        if (groupIndex > -1) {
-            Secret.current.groups.splice(groupIndex, 1);
+        var memberIndex = Group.current.members.indexOf(username);
+        if (memberIndex > -1) {
+            Group.current.members.splice(memberIndex, 1);
         } else {
-            Secret.current.groups.push(group);
+            Group.current.members.push(username);
         }
     }
 }

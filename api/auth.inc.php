@@ -71,7 +71,7 @@ function extractTokenFromHeader() {
         exit();
     }
 
-    // Ensure whether the token is expired
+    // Ensure token is not expired
     $authInfo = json_decode($json, true);
     if($authInfo["expire"] < getUtcTime()) {
         http_response_code(401);

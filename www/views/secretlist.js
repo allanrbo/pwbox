@@ -4,16 +4,7 @@ var SecretList = {
     },
 
     view: function() {
-        return [
-            m("h2.content-subhead", "Secrets"),
-
-            m("form.pure-form.pure-form-aligned", [
-                m("input#searchbox[type=text][autofocus]", {oncreate: function(vnode) { setTimeout(function() { vnode.dom.focus(); }, 0); } }),
-                " ",
-                m("button[type=submit].pure-button", "Search")
-            ]),
-            m("br"),
-            m("table.pure-table.pure-table-horizontal", [
+        var table = m("table.pure-table.pure-table-horizontal", [
                 m("thead", [
                     m("tr", [
                         m("th", "Title"),
@@ -28,7 +19,22 @@ var SecretList = {
                         m("td", row.modified),
                     ]);
                 }))
+            ]);
+
+        if (Secret.list.length == 0) {
+            table = "No secrets found.";
+        }
+
+        return [
+            m("h2.content-subhead", "Secrets"),
+
+            m("form.pure-form.pure-form-aligned", [
+                m("input#searchbox[type=text][autofocus]", {oncreate: function(vnode) { setTimeout(function() { vnode.dom.focus(); }, 0); } }),
+                " ",
+                m("button[type=submit].pure-button", "Search")
             ]),
+            m("br"),
+            table
         ];
     }
 }
