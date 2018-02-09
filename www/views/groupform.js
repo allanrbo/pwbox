@@ -15,7 +15,7 @@ var GroupForm = {
                 e.preventDefault();
                 if (confirm("Really delete user group \"" + Group.current.title + "\"?")) {
                     Group.delete().then(function() {
-                        m.route.set("/groups");
+                        m.route.set("/admin/groups");
                     });
                 }
             }}, "Delete");
@@ -28,7 +28,7 @@ var GroupForm = {
                     onsubmit: function(e) {
                         e.preventDefault();
                         Group.save().then(function() {
-                            m.route.set("/groups");
+                            m.route.set("/admin/groups");
                         });
                     }
                 },
