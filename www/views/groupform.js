@@ -13,7 +13,7 @@ var GroupForm = {
         if (Group.current.modified) {
             deleteButton = m("button.pure-button", {onclick: function(e) {
                 e.preventDefault();
-                if (confirm("Really delete user group \"" + Group.current.title + "\"?")) {
+                if (confirm("Really delete user group \"" + Group.current.name + "\"?")) {
                     Group.delete().then(function() {
                         m.route.set("/admin/groups");
                     });
@@ -52,18 +52,12 @@ var GroupForm = {
                                 checked = true;
                             }
 
-                            var isCurrentUser = Session.getUsername() == user.username;
-                            if (isCurrentUser) {
-                                checked = true;
-                            }
-
                             return m("div",
                                 m("label", [
                                     m("input", {
                                         type: "checkbox",
                                         checked: checked,
                                         value: user.username,
-                                        disabled: isCurrentUser,
                                         onclick: function() { Group.toggleMember(user.username); }
                                     }),
                                     " " + user.username

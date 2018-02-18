@@ -26,5 +26,8 @@ m.route(document.body, "/secrets", {
     "/admin": { render: function() { return m(Layout, m(AdminMenu)); } },
     "/admin/groups": { render: function() { return m(Layout, m(GroupList)); } },
     "/admin/groups/:key": { render: function(vnode) { return m(Layout, vnode.attrs, m(GroupForm, vnode.attrs)); } },
+    "/admin/users": { render: function() { return m(Layout, m(UserList)); } },
+    "/admin/users/:key": { render: function(vnode) { return m(Layout, vnode.attrs, m(UserForm, vnode.attrs)); } },
+    "/admin/profile": { render: function() { return m(Layout, m(Profile)); } },
     "/logout": { render: function() { Session.logout(); m.route.set("/login"); } }
 });

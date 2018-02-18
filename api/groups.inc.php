@@ -11,11 +11,11 @@ function groupNameValid($groupName) {
 }
 
 
-function getAllMembers($authInfo, $groupNames) {
+function getAllMembers($groupNames) {
     $groupsPath = getconfig()["groupsPath"];
 
     $members = [];
-    foreach ($data["groups"] as $groupName) {
+    foreach ($groupNames as $groupName) {
         // Ensure the group exists
         if(!file_exists("$groupsPath/$groupName")) {
             http_response_code(400);
@@ -23,12 +23,34 @@ function getAllMembers($authInfo, $groupNames) {
             exit();
         }
 
-        // The GPG recipients of the group are the members
-        $group = gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$groupsPath/$groupName");
-        $members = array_unique(array_merge($group["recipients"], $members));
+        $group = json_decode(file_get_contents("$groupsPath/$groupName"), true);
+        $members = array_unique(array_merge($group["members"], $members));
     }
 
     return $members;
+}
+
+
+function isGroupMember($groupName, $username) {
+    $groupsPath = getconfig()["groupsPath"];
+    $group = json_decode(file_get_contents("$groupsPath/$groupName"), true);
+    return in_array($username, $group["members"]);
+}
+
+
+function getGroupMemberships($username) {
+    $groupsPath = getconfig()["groupsPath"];
+
+    $groups = [];
+    foreach (array_diff(scandir($groupsPath), [".", ".."]) as $key => $value) {
+        $groupName = $value;
+        $group = json_decode(file_get_contents("$groupsPath/$groupName"), true);
+        if (in_array($username, $group["members"])) {
+            $groups[] = $groupName;
+        }
+    }
+
+    return $groups;
 }
 
 
@@ -56,9 +78,8 @@ function reencryptSecretsUsingGroup($authInfo, $groupName, $removeGroup) {
                     exit();
                 }
 
-                // The GPG recipients of the group are the members
-                $group = gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$groupsPath/$groupName");
-                $recipients = array_unique(array_merge($recipients, $group["recipients"]));
+                $group = json_decode(file_get_contents("$groupsPath/$groupName"), true);
+                $recipients = array_unique(array_merge($recipients, $group["members"]));
             }
 
             $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $recipients, json_encode($fullSecret));

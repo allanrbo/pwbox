@@ -51,7 +51,6 @@ function gpgInvoke($cmd, $stdin = "", $passphrase = null, $getStdErr = false, $a
 
 
 function gpgUsernameValid($username) {
-    if(!isset($username)) return false;
     if(strlen($username) == 0) return false;
     if(preg_match("/[^a-zA-Z0-9]/", $username)) {
         return false;

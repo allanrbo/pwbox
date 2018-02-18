@@ -23,7 +23,7 @@ var SecretForm = {
 
         var availableGroups = [];
         for (var i = 0; i < Group.list.length; i++) {
-            if (Group.list[i].isMember) {
+            if (Group.list[i].name != "Administrators") {
                 availableGroups.push(Group.list[i]);
             }
         }

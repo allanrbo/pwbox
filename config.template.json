@@ -4,5 +4,6 @@
     "gpghome": "/pwbox/data/gpghome",
     "secretsPath": "/pwbox/data/secrets",
     "groupsPath": "/pwbox/data/groups",
+    "userProfilesPath": "/pwbox/data/userprofiles",
     "tokenExpiryMinutes": 45
 }

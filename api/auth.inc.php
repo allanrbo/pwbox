@@ -1,7 +1,7 @@
 <?php
 
 function ensureSystemUserExists() {
-    if(!gpgSystemUserExists()) {
+    if (!gpgSystemUserExists()) {
         gpgCreateUser("system", "");
     }
 }
@@ -29,18 +29,18 @@ function generateToken($username, $password) {
 
 
 function verifyCredentials($username, $password) {
-    if("username" == "system") {
+    if ("username" == "system") {
         return false;
     }
 
-    if(!gpgUserExists($username)) {
+    if (!gpgUserExists($username)) {
         return false;
     }
 
     try {
         gpgEncryptSecret($username, $password, [$username], "dummy");
     } catch (Exception $e) {
-        if(strpos($e->getMessage(), "bad passphrase") !== false) {
+        if (strpos($e->getMessage(), "bad passphrase") !== false) {
             return false;
         }
         throw $e;
@@ -52,7 +52,7 @@ function verifyCredentials($username, $password) {
 
 function extractTokenFromHeader() {
     $authHeader = $_SERVER["HTTP_AUTHORIZATION"];
-    if(strpos($authHeader, "Bearer ") !== 0) {
+    if (strpos($authHeader, "Bearer ") !== 0) {
         http_response_code(400);
         echo json_encode(["status" => "unauthorized", "message" => "Unsupported auth type."]);
         exit();
@@ -73,9 +73,18 @@ function extractTokenFromHeader() {
 
     // Ensure token is not expired
     $authInfo = json_decode($json, true);
-    if($authInfo["expire"] < getUtcTime()) {
+    if ($authInfo["expire"] < getUtcTime()) {
         http_response_code(401);
         echo json_encode(["status" => "unauthorized", "message" => "Expired auth token."]);
+        exit();
+    }
+
+    // Ensure user is not locked out
+    $userProfilesPath = getconfig()["userProfilesPath"];
+    $user = json_decode(file_get_contents("$userProfilesPath/$authInfo[username]"), true);
+    if (isset($user["lockedOut"]) && $user["lockedOut"] === true) {
+        http_response_code(401);
+        echo json_encode(["status" => "unauthorized", "message" => "User is locked out."]);
         exit();
     }
 
@@ -83,7 +92,7 @@ function extractTokenFromHeader() {
     try {
         gpgEncryptSecret($authInfo["username"], $authInfo["password"], [$authInfo["username"]], "dummy");
     } catch (Exception $e) {
-        if(strpos($e->getMessage(), "bad passphrase") !== false) {
+        if (strpos($e->getMessage(), "bad passphrase") !== false) {
             echo json_encode(["status" => "unauthorized", "message" => "Invalid auth token. User password has changed."]);
             exit();
         }

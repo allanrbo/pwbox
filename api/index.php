@@ -6,13 +6,14 @@ require("errorhandling.inc.php");
 require("gpg.inc.php");
 require("groups.inc.php");
 require("auth.inc.php");
+require("twofactor.inc.php");
 
 header("Content-Type: application/json");
 
 $method = $_SERVER["REQUEST_METHOD"];
 $uriPrefix = getconfig()["uriPrefix"];
 $uri = $_SERVER["REQUEST_URI"];
-if(strpos($uri, $uriPrefix) !== 0) {
+if (strpos($uri, $uriPrefix) !== 0) {
     throw new Exception("Unexpected URI prefix. Check configuration.");
 }
 $uri = substr($uri, strlen($uriPrefix));
@@ -21,14 +22,14 @@ $uri = substr($uri, strlen($uriPrefix));
 /*
  * Authentication endpoint
  */
-if($method == "POST" && $uri == "/authenticate") {
+if ($method == "POST" && $uri == "/authenticate") {
     writelog("Requested $method on $uri");
 
     $data = json_decode(file_get_contents("php://input"), true);
     $username = $data["username"];
     $password = $data["password"];
 
-    if(!verifyCredentials($username, $password)) {
+    if (!verifyCredentials($username, $password)) {
         http_response_code(401);
         echo json_encode(["status" => "error", "message" => "Invalid credentials."]);
         exit();
@@ -43,62 +44,120 @@ if($method == "POST" && $uri == "/authenticate") {
 /*
  * User creation endpoint
  */
-if($method == "POST" && $uri == "/user") {
+if ($method == "POST" && $uri == "/user") {
     writelog("Requested $method on $uri");
-    //$authInfo = extractTokenFromHeader();
+    $authInfo = extractTokenFromHeader();
+
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
 
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if(!gpgUsernameValid($data["username"])) {
+    if (!isset($data["username"]) || !gpgUsernameValid($data["username"])) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Username is invalid."]);
         exit();
     }
 
-    if(!gpgPassphraseValid($data["password"])) {
+    if (!isset($data["password"]) || !gpgPassphraseValid($data["password"])) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Password is invalid."]);
         exit();
     }
 
-    if(gpgUserExists($data["username"])) {
+    if (gpgUserExists($data["username"])) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "User already exists"]);
         exit();
     }
 
-    gpgCreateUser($data["username"], $data["password"]);
+    $username = $data["username"];
+    gpgCreateUser($username, $data["password"]);
+
+    unset($data["username"]);
+    unset($data["password"]);
+    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modifiedBy"] = $authInfo["username"];
+    $userProfilesPath = getconfig()["userProfilesPath"];
+    file_put_contents("$userProfilesPath/$username", json_encode($data));
+
     echo json_encode(["status" => "ok"]);
     exit();
 }
 
 
 /*
- * User password update endpoint
+ * User update endpoint
  */
 $matches = null;
-if($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) {
+if ($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
     $username = $matches[1];
 
+    if($username != $authInfo["username"] && !isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if($username != $authInfo["username"]) {
+    if ($username == $authInfo["username"] && isset($data["lockedOut"]) && $data["lockedOut"] === true) {
         http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Only allowed to change password on own user."]);
+        echo json_encode(["status" => "error", "message" => "You cannot lock yourself out."]);
         exit();
     }
 
-    if(!gpgPassphraseValid($data["password"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "New password is invalid."]);
-        exit();
+    if (isset($data["password"])) {
+        if ($username != $authInfo["username"]) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Only allowed to change password on own user."]);
+            exit();
+        }
+
+        if (!gpgPassphraseValid($data["password"])) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "New password is invalid."]);
+            exit();
+        }
+
+        if ($authInfo["password"] != $data["oldPassword"]) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Old password incorrect."]);
+            exit();
+        }
+
+        gpgChangePassphrase($username, $authInfo["password"], $data["password"]);
+
+        unset($data["password"]);
+        unset($data["oldPassword"]);
+        unset($data["passwordRepeat"]);
     }
 
-    gpgChangePassphrase($username, $authInfo["password"], $data["password"]);
-    echo json_encode(["status" => "ok"]);
+    $otpUrl = null;
+    if (isset($data["generateOtpKey"]) && $data["generateOtpKey"] === true) {
+        unset($data["generateOtpKey"]);
+        list($secretHex, $otpUrl) = generateOtpKey();
+        $data["otpKey"] = $secretHex;
+    }
+
+    unset($data["username"]);
+    unset($data["groupMemberships"]);
+    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modifiedBy"] = $authInfo["username"];
+    $userProfilesPath = getconfig()["userProfilesPath"];
+    file_put_contents("$userProfilesPath/$username", json_encode($data));
+
+    $r = ["status" => "ok"];
+    if ($otpUrl) {
+        $r["otpUrl"] = $otpUrl;
+    }
+    echo json_encode($r);
     exit();
 }
 
@@ -106,7 +165,7 @@ if($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) {
 /*
  * User list endpoint
  */
-if($method == "GET" && $uri == "/user") {
+if ($method == "GET" && $uri == "/user") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
@@ -121,18 +180,49 @@ if($method == "GET" && $uri == "/user") {
 
 
 /*
+ * Specific user endpoint
+ */
+if ($method == "GET" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    $username = $matches[1];
+
+    if($username != $authInfo["username"] && !isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
+    if (gpgUserExists($username)) {
+        $userProfilesPath = getconfig()["userProfilesPath"];
+        $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
+        $user["username"] = $username;
+        $user["groupMemberships"] = getGroupMemberships($username);
+        unset($user["otpKey"]);
+        echo json_encode($user);
+    } else {
+        http_response_code(404);
+        echo json_encode(["status" => "notFound"]);
+    }
+
+    exit();
+}
+
+
+/*
  * Secrets creation endpoint
  */
-if($method == "POST" && $uri == "/secret") {
+if ($method == "POST" && $uri == "/secret") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
     $data = json_decode(file_get_contents("php://input"), true);
     $recipients = [$authInfo["username"]];
+    $recipients = array_unique(array_merge($recipients, getAllMembers(["Administrators"])));
 
-    if(isset($data["groups"])) {
-        $members = getAllMembers($authInfo, $data["groups"]);
-        $recipients = array_unique(array_merge($recipients, $members));
+    if (isset($data["groups"])) {
+        $recipients = array_unique(array_merge($recipients, getAllMembers($data["groups"])));
     }
 
     unset($data["id"]);
@@ -154,7 +244,7 @@ if($method == "POST" && $uri == "/secret") {
  * Secrets update endpoint
  */
 $matches = null;
-if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
+if ($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
@@ -162,7 +252,7 @@ if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 
     // Ensure the secret exists already
     $secretsPath = getconfig()["secretsPath"];
-    if(!file_exists("$secretsPath/$secretId")) {
+    if (!file_exists("$secretsPath/$secretId")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
         exit();
@@ -173,10 +263,10 @@ if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 
     $data = json_decode(file_get_contents("php://input"), true);
     $recipients = [$authInfo["username"]];
+    $recipients = array_unique(array_merge($recipients, getAllMembers(["Administrators"])));
 
-    if(isset($data["groups"])) {
-        $members = getAllMembers($authInfo, $data["groups"]);
-        $recipients = array_unique(array_merge($recipients, $members));
+    if (isset($data["groups"])) {
+        $recipients = array_unique(array_merge($recipients, getAllMembers($data["groups"])));
     }
 
     unset($data["id"]);
@@ -195,7 +285,7 @@ if($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 /*
  * Secrets list endpoint
  */
-if($method == "GET" && $uri == "/secret") {
+if ($method == "GET" && $uri == "/secret") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
@@ -209,7 +299,7 @@ if($method == "GET" && $uri == "/secret") {
  * Specific secret endpoint
  */
 $matches = null;
-if($method == "GET" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
+if ($method == "GET" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
@@ -217,7 +307,7 @@ if($method == "GET" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 
     // Ensure the secret exists
     $secretsPath = getconfig()["secretsPath"];
-    if(!file_exists("$secretsPath/$secretId")) {
+    if (!file_exists("$secretsPath/$secretId")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
         exit();
@@ -232,14 +322,14 @@ if($method == "GET" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
  * Delete secret endpoint
  */
 $matches = null;
-if($method == "DELETE" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
+if ($method == "DELETE" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
     $secretId = $matches[1];
 
     $secretsPath = getconfig()["secretsPath"];
-    if(!file_exists("$secretsPath/$secretId")) {
+    if (!file_exists("$secretsPath/$secretId")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
         exit();
@@ -258,40 +348,43 @@ if($method == "DELETE" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches))
 /*
  * Group creation endpoint
  */
-if($method == "POST" && $uri == "/group") {
+if ($method == "POST" && $uri == "/group") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
-    $data = json_decode(file_get_contents("php://input"), true);
-    $members = [$authInfo["username"]];
-    if(isset($data["members"])) {
-        $members = array_unique(array_merge($members, $data["members"]));
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
     }
 
-    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
-    $data["modifiedBy"] = $authInfo["username"];
+    $data = json_decode(file_get_contents("php://input"), true);
+    $data["members"] = isset($data["members"]) ? $data["members"] : [];
 
-    if(!isset($data["name"]) || !groupNameValid($data["name"])) {
+    if (!isset($data["name"]) || !groupNameValid($data["name"])) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Invalid group name. Must consist of letters A-Z or numbers 0-9."]);
         exit();
     }
 
+    $groupName = $data["name"];
+
     $groupsPath = getconfig()["groupsPath"];
 
     // Ensure the group does not exists already
     $groupsPath = getconfig()["groupsPath"];
-    if(file_exists("$groupsPath/$data[name]")) {
+    if (file_exists("$groupsPath/$groupName")) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Group with this name already exists."]);
         exit();
     }
 
-    // Use $members as the GPG recipients
-    $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $members, json_encode($data));
-    file_put_contents("$groupsPath/$data[name]", $ciphertext);
+    unset($data["name"]);
+    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modifiedBy"] = $authInfo["username"];
+    file_put_contents("$groupsPath/$groupName", json_encode($data));
 
-    echo json_encode(["status" => "ok", "name" => $data["name"]]);
+    echo json_encode(["status" => "ok", "name" => $groupName]);
     exit();
 }
 
@@ -300,36 +393,34 @@ if($method == "POST" && $uri == "/group") {
  * Group update endpoint
  */
 $matches = null;
-if($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
+if ($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
     $groupName = $matches[1];
 
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
     // Ensure the group exists already
     $groupsPath = getconfig()["groupsPath"];
-    if(!file_exists("$groupsPath/$groupName")) {
+    if (!file_exists("$groupsPath/$groupName")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
         exit();
     }
 
-    // Read existing group to ensure the user is currently a member
-    gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$groupsPath/$groupName");
-
     $data = json_decode(file_get_contents("php://input"), true);
-    $members = [$authInfo["username"]];
-    if(isset($data["members"])) {
-        $members = array_unique(array_merge($members, $data["members"]));
-    }
+    $data["members"] = isset($data["members"]) ? $data["members"] : [];
 
-    unset($data["members"]);
     unset($data["name"]);
     $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
     $data["modifiedBy"] = $authInfo["username"];
 
-    $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $members, json_encode($data));
-    file_put_contents("$groupsPath/$groupName", $ciphertext);
+    file_put_contents("$groupsPath/$groupName", json_encode($data));
 
     reencryptSecretsUsingGroup($authInfo, $groupName, false);
 
@@ -341,7 +432,7 @@ if($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) 
 /*
  * Group list endpoint
  */
-if($method == "GET" && $uri == "/group") {
+if ($method == "GET" && $uri == "/group") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
@@ -350,10 +441,8 @@ if($method == "GET" && $uri == "/group") {
     $groups = [];
     foreach (array_diff(scandir($groupsPath), [".", ".."]) as $key => $value) {
         $groupname = $value;
-        $ciphertext = file_get_contents("$groupsPath/$groupname");
-        $members = gpgRecipientsFromCiphertext($ciphertext);
+        $members = json_decode(file_get_contents("$groupsPath/$groupname"), true)["members"];
         $isMember = in_array($authInfo["username"], $members);
-
         $groups[] = ["name" => $groupname, "members" => $members, "isMember" => $isMember];
     }
 
@@ -366,7 +455,7 @@ if($method == "GET" && $uri == "/group") {
  * Specific group endpoint
  */
 $matches = null;
-if($method == "GET" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
+if ($method == "GET" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
@@ -374,7 +463,7 @@ if($method == "GET" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) 
 
     // Ensure the group exists
     $groupsPath = getconfig()["groupsPath"];
-    if(!file_exists("$groupsPath/$groupName")) {
+    if (!file_exists("$groupsPath/$groupName")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
         exit();
@@ -382,13 +471,8 @@ if($method == "GET" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) 
 
     $group = array_merge(
         ["name" => $groupName],
-        gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$groupsPath/$groupName")
+        json_decode(file_get_contents("$groupsPath/$groupName"), true)
     );
-
-    // The GPG recipients are the members
-    $members = $group["recipients"];
-    $group["members"] = $members;
-    unset($group["recipients"]);
 
     echo json_encode($group);
     exit();
@@ -399,21 +483,24 @@ if($method == "GET" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) 
  * Delete group endpoint
  */
 $matches = null;
-if($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
+if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
     $groupName = $matches[1];
 
     $groupsPath = getconfig()["groupsPath"];
-    if(!file_exists("$groupsPath/$groupName")) {
+    if (!file_exists("$groupsPath/$groupName")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
         exit();
     }
 
-    // Read group to ensure the user is currently member of the group being deleted
-    gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$groupsPath/$groupName");
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
 
     reencryptSecretsUsingGroup($authInfo, $groupName, true);
 

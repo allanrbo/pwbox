@@ -15,12 +15,25 @@ var User = {
         .catch(alertErrorMessage);
     },
 
+    load: function(id) {
+        return m.request({
+            method: "GET",
+            url: "/api/user/" + id,
+            config: xhrConfig
+        })
+        .then(function(result) {
+            User.current = result;
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
     save: function() {
         var method = "POST";
         var url = "/api/user";
-        if (User.current.id) {
+        if (User.current.modified) {
             method = "PUT";
-            url = "/api/user/" + User.current.id;
+            url = "/api/user/" + User.current.username;
         }
 
         return m.request({

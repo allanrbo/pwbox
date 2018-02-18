@@ -16,12 +16,14 @@ var Session = {
             Session.current.password = null;
         })
         .catch(handleUnauthorized)
-        .catch(alertErrorMessage);
+        .catch(alertErrorMessage)
+        .then(Session.refreshProfile);
     },
 
     logout: function(id) {
         localStorage.setItem("username", null);
         localStorage.setItem("token", null);
+        localStorage.setItem("profile", null);
 
         Session.current.username = null;
         Session.current.password = null;
@@ -30,11 +32,24 @@ var Session = {
         Secret.list = [];
     },
 
+    refreshProfile: function() {
+        return User.load(Session.current.username)
+        .then(function() {
+            localStorage.setItem("profile", JSON.stringify(User.current));
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
     getToken: function() {
         return localStorage.getItem("token");
     },
 
     getUsername: function() {
         return localStorage.getItem("username");
+    },
+
+    getProfile: function() {
+        return JSON.parse(localStorage.getItem("profile"));
     }
 }
