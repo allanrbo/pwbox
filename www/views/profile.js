@@ -1,3 +1,25 @@
+// Mithril component wrapping around the QRCode for JavaScript library 
+var QrCodeWrapper = {
+    onupdate: function(vnode) {
+        if (vnode.state.data != vnode.attrs.data) {
+            while (vnode.dom.firstChild) {
+                vnode.dom.removeChild(vnode.dom.firstChild);
+            }
+
+            var o = new QRCode(vnode.dom, {
+                width : 200,
+                height : 200
+            });
+            o.makeCode(vnode.attrs.data);
+
+            vnode.state.data = vnode.attrs.data;
+        }
+    },
+    view: function() {
+        return m("div");
+    }
+};
+
 var Profile = {
     oninit: function(vnode) {
         User.current = {};
@@ -63,43 +85,24 @@ var Profile = {
 
 
             m("h3.content-subhead", "Two-factor authentication"),
-            m("#otpQrCodeDesc"),
-            m("#otpQrCode"),
+            User.current.otpUrl ? "Scan this code with a one-time-password authenticator such as Google Authenticator." : null,
+            m(QrCodeWrapper, {data: User.current.otpUrl}),
             m("form#twoFactorGenForm.pure-form.pure-form-aligned", {
                     onsubmit: function(e) {
                         e.preventDefault();
-
+                        User.current.password = null;
                         User.current.generateOtpKey = true;
-
                         User.save().then(function(result) {
-
-                            // TODO make this more Mithril-friendly
-
-                            var otpQrCode = document.getElementById("otpQrCode");
-                            otpQrCode.innerHTML = "";
-                            var qrCode = new QRCode(otpQrCode, {
-                                width : 200,
-                                height : 200
-                            });
-                            qrCode.makeCode(result.otpUrl);
-
-                            var otpQrCodeDesc = document.getElementById("otpQrCodeDesc");
-                            otpQrCodeDesc.innerHTML = "<p>Scan this code with a one-time-password authenticator such as Google Authenticator.</p>";
-
-                            var twoFactorGenForm = document.getElementById("twoFactorGenForm");
-                            twoFactorGenForm.innerHTML = "";
+                            User.current.otpUrl = result.otpUrl;
                         });
                     }
                 },
-                m("fieldset", [
+                User.current.otpUrl ? null : m("fieldset", [
                     m(".pure-controls", [
                         m("button[type=submit].pure-button pure-button-primary", "Generate new key")
                     ])
                 ])
             )
-
-
-
         ];
     }
 }
