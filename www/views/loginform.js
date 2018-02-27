@@ -1,12 +1,21 @@
 var LoginForm = {
+    oninit: function() {
+        Session.current = {};
+    },
+
     view: function() {
         return [
             m("form.pure-form.pure-form-aligned.login-form", {
                     onsubmit: function(e) {
                         e.preventDefault();
-                        Session.login().then(function() {
+                        Session.login()
+                        .then(function() {
                             m.route.set("/secrets");
+                        })
+                        .catch(function() {
+                            Session.current.loggingIn = false;
                         });
+                        Session.current.loggingIn = true;
                     }
                 },
                 m("fieldset", [
@@ -30,7 +39,18 @@ var LoginForm = {
                         }),
                     ]),
 
-                    m(".pure-controls", m("button[type=submit].pure-button pure-button-primary", "Log in"))
+                    m(".pure-control-group", [
+                        m("label[for=otp]", "Two-factor password"),
+                        m("input#otp[type=text]", {
+                            oninput: m.withAttr("value", function(value) {
+                                Session.current.otp = value;
+                            }),
+                            value: Session.current.otp
+                        }),
+                    ]),
+
+                    m(".pure-controls", m("button[type=submit].pure-button pure-button-primary",
+                        {disabled: !Session.current.loggingIn ? "" : "disabled"}, Session.current.loggingIn ? "Logging in..." : "Log in"))
                 ])
             )
         ];

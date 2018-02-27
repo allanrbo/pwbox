@@ -18,7 +18,6 @@ if (strpos($uri, $uriPrefix) !== 0) {
 }
 $uri = substr($uri, strlen($uriPrefix));
 
-
 /*
  * Authentication endpoint
  */
@@ -29,10 +28,36 @@ if ($method == "POST" && $uri == "/authenticate") {
     $username = $data["username"];
     $password = $data["password"];
 
+    $userProfilesPath = getconfig()["userProfilesPath"];
+    $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
+    $expectedOtp = "";
+    if (isset($user["otpKey"])) {
+        $expectedOtp = generateOtp($user["otpKey"]);
+    }
+
     if (!verifyCredentials($username, $password)) {
+        sleep(3);
         http_response_code(401);
         echo json_encode(["status" => "error", "message" => "Invalid credentials."]);
         exit();
+    }
+
+    if (!isset($data["otp"])) {
+        $data["otp"] = "";
+    }
+
+    if (isset($user["otpKey"]) && $expectedOtp != $data["otp"] && !in_array($data["otp"], $user["emergencyPasswords"])) {
+        sleep(3);
+        http_response_code(401);
+        echo json_encode(["status" => "error", "message" => "Invalid credentials."]);
+        exit();
+    }
+
+    // Remove consumed emergency one-time password
+    if (isset($user["otpKey"]) && isset($data["otp"]) && in_array($data["otp"], $user["emergencyPasswords"])) {
+        writelog("Emergency one-time password was used for $username");
+        $user["emergencyPasswords"] = array_diff($user["emergencyPasswords"], [$data["otp"]]);
+        file_put_contents("$userProfilesPath/$username", json_encode($user));
     }
 
     $token = generateToken($username, $password);
@@ -113,39 +138,6 @@ if ($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
         exit();
     }
 
-    if (isset($data["password"])) {
-        if ($username != $authInfo["username"]) {
-            http_response_code(400);
-            echo json_encode(["status" => "error", "message" => "Only allowed to change password on own user."]);
-            exit();
-        }
-
-        if (!gpgPassphraseValid($data["password"])) {
-            http_response_code(400);
-            echo json_encode(["status" => "error", "message" => "New password is invalid."]);
-            exit();
-        }
-
-        if ($authInfo["password"] != $data["oldPassword"]) {
-            http_response_code(400);
-            echo json_encode(["status" => "error", "message" => "Old password incorrect."]);
-            exit();
-        }
-
-        gpgChangePassphrase($username, $authInfo["password"], $data["password"]);
-
-        unset($data["password"]);
-        unset($data["oldPassword"]);
-        unset($data["passwordRepeat"]);
-    }
-
-    $otpUrl = null;
-    if (isset($data["generateOtpKey"]) && $data["generateOtpKey"] === true) {
-        unset($data["generateOtpKey"]);
-        list($secretHex, $otpUrl) = generateOtpKey();
-        $data["otpKey"] = $secretHex;
-    }
-
     unset($data["username"]);
     unset($data["groupMemberships"]);
     $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
@@ -153,11 +145,65 @@ if ($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
     $userProfilesPath = getconfig()["userProfilesPath"];
     file_put_contents("$userProfilesPath/$username", json_encode($data));
 
-    $r = ["status" => "ok"];
-    if ($otpUrl) {
-        $r["otpUrl"] = $otpUrl;
+    echo json_encode(["status" => "ok"]);
+    exit();
+}
+
+
+/*
+ * User password update endpoint
+ */
+$matches = null;
+if ($method == "POST" && $uri == "/changepassword") {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!gpgPassphraseValid($data["password"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "New password is invalid."]);
+        exit();
     }
-    echo json_encode($r);
+
+    if ($authInfo["password"] != $data["oldPassword"]) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Old password incorrect."]);
+        exit();
+    }
+
+    gpgChangePassphrase($authInfo["username"], $authInfo["password"], $data["password"]);
+    echo json_encode(["status" => "ok"]);
+    exit();
+}
+
+
+/*
+ * User two-factor one-time password key generation endpoint
+ */
+$matches = null;
+if ($method == "POST" && $uri == "/changeotpkey") {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    list($secretHex, $otpUrl) = generateOtpKey();
+    $emergencyPasswords = generateEmergencyPasswords();
+
+    $username = $authInfo["username"];
+    $userProfilesPath = getconfig()["userProfilesPath"];
+    $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
+    $data["otpKey"] = $secretHex;
+    $data["emergencyPasswords"] = $emergencyPasswords;
+    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modifiedBy"] = $authInfo["username"];
+    file_put_contents("$userProfilesPath/$username", json_encode($data));
+
+    echo json_encode([
+        "status" => "ok",
+        "otpUrl" => $otpUrl,
+        "emergencyPasswords" => $emergencyPasswords
+    ]);
+
     exit();
 }
 
@@ -199,7 +245,9 @@ if ($method == "GET" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
         $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
         $user["username"] = $username;
         $user["groupMemberships"] = getGroupMemberships($username);
+        $user["otpEnabled"] = isset($user["otpKey"]);
         unset($user["otpKey"]);
+        unset($user["emergencyPasswords"]);
         echo json_encode($user);
     } else {
         http_response_code(404);

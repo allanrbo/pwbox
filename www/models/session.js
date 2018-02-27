@@ -7,13 +7,15 @@ var Session = {
             url: "/api/authenticate",
             data: {
                 username: Session.current.username,
-                password: Session.current.password
+                password: Session.current.password,
+                otp: Session.current.otp
             }
         })
         .then(function(data) {
             localStorage.setItem("username", Session.current.username);
             localStorage.setItem("token", data.token);
             Session.current.password = null;
+            Session.current.otp = null;
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage)

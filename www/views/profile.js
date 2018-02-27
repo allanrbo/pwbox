@@ -1,29 +1,11 @@
-// Mithril component wrapping around the QRCode for JavaScript library 
-var QrCodeWrapper = {
-    onupdate: function(vnode) {
-        if (vnode.state.data != vnode.attrs.data) {
-            while (vnode.dom.firstChild) {
-                vnode.dom.removeChild(vnode.dom.firstChild);
-            }
-
-            var o = new QRCode(vnode.dom, {
-                width : 200,
-                height : 200
-            });
-            o.makeCode(vnode.attrs.data);
-
-            vnode.state.data = vnode.attrs.data;
-        }
-    },
-    view: function() {
-        return m("div");
-    }
-};
-
 var Profile = {
     oninit: function(vnode) {
         User.current = {};
         User.load(Session.getUsername());
+
+        UserChangePassword.current = {};
+
+        UserChangeOtpKey.current = {};
     },
 
     view: function() {
@@ -35,13 +17,16 @@ var Profile = {
                     onsubmit: function(e) {
                         e.preventDefault();
 
-                        if (User.current.passwordRepeat != User.current.password) {
+                        if (UserChangePassword.current.passwordRepeat != UserChangePassword.current.password) {
                             alert("Password and repeated password must match, but do not match.");
                             return;
                         }
 
-                        User.save().then(function() {
-                            m.route.set("/secrets");
+                        UserChangePassword.save().then(function() {
+                            alert("Password updated");
+                            UserChangePassword.current.oldPassword = "";
+                            UserChangePassword.current.password = "";
+                            UserChangePassword.current.passwordRepeat = "";
                         });
                     }
                 },
@@ -51,9 +36,9 @@ var Profile = {
                         m("label[for=oldPassword]", "Old password"),
                         m("input#oldPassword[type=password]", {
                             oninput: m.withAttr("value", function(value) {
-                                User.current.oldPassword = value;
+                                UserChangePassword.current.oldPassword = value;
                             }),
-                            value: User.current.oldPassword
+                            value: UserChangePassword.current.oldPassword
                         }),
                     ]),
 
@@ -61,9 +46,9 @@ var Profile = {
                         m("label[for=password]", "New password"),
                         m("input#password[type=password]", {
                             oninput: m.withAttr("value", function(value) {
-                                User.current.password = value;
+                                UserChangePassword.current.password = value;
                             }),
-                            value: User.current.password
+                            value: UserChangePassword.current.password
                         }),
                     ]),
 
@@ -71,9 +56,9 @@ var Profile = {
                         m("label[for=passwordRepeat]", "New password repeated"),
                         m("input#passwordRepeat[type=password]", {
                             oninput: m.withAttr("value", function(value) {
-                                User.current.passwordRepeat = value;
+                                UserChangePassword.current.passwordRepeat = value;
                             }),
-                            value: User.current.passwordRepeat
+                            value: UserChangePassword.current.passwordRepeat
                         }),
                     ]),
 
@@ -85,24 +70,41 @@ var Profile = {
 
 
             m("h3.content-subhead", "Two-factor authentication"),
-            User.current.otpUrl ? "Scan this code with a one-time-password authenticator such as Google Authenticator." : null,
-            m(QrCodeWrapper, {data: User.current.otpUrl}),
+            !UserChangeOtpKey.current.otpUrl ?
+                "Before generating a key, please ensure you have a one-time password authenticator app installed, such as Google Authenticator."
+                : "Scan this code with a one-time password authenticator such as Google Authenticator.",
+            !UserChangeOtpKey.current.otpUrl ?
+                null
+                : m(QrCodeWrapper, {data: UserChangeOtpKey.current.otpUrl}),
             m("form#twoFactorGenForm.pure-form.pure-form-aligned", {
                     onsubmit: function(e) {
                         e.preventDefault();
-                        User.current.password = null;
-                        User.current.generateOtpKey = true;
-                        User.save().then(function(result) {
-                            User.current.otpUrl = result.otpUrl;
+                        if (User.current.otpEnabled && !confirm("This will invalidate your existing key in your authenticator app as well as any emergency one-time passwords, and generate new ones. Are you sure?")) {
+                            return;
+                        }
+
+                        UserChangeOtpKey.save().then(function(result) {
+                            UserChangeOtpKey.current = result;
                         });
                     }
                 },
-                User.current.otpUrl ? null : m("fieldset", [
+                (User.current.otpEnabled && !UserChangeOtpKey.current.otpUrl) ? "Regenerating keys will invalidate your existing key in your authenticator app as well as any emergency one-time passwords, and generate new ones." : null,
+                (!User.current.otpEnabled && !UserChangeOtpKey.current.otpUrl) ? m("fieldset", [
+                   m(".pure-controls", [
+                       m("button[type=submit].pure-button pure-button-primary", "Enable two-factor authentication")
+                   ])
+                ]) : null,
+                (User.current.otpEnabled && !UserChangeOtpKey.current.otpUrl) ? m("fieldset", [
                     m(".pure-controls", [
-                        m("button[type=submit].pure-button pure-button-primary", "Generate new key")
+                        m("button[type=submit].pure-button pure-button-primary", "Regenerate two-factor authentication keys")
                     ])
-                ])
-            )
+                ]) : null,
+            ),
+            !UserChangeOtpKey.current.emergencyPasswords ? null : [
+                m("p", "Emergency one-time use passwords:"),
+                m("pre", UserChangeOtpKey.current.emergencyPasswords.join("\n")),
+                m("p", "We suggest to note these emergency passwords on paper in a secure location, for use if the phone with the authenticator app gets lost. Each password can only be used once."),
+            ]
         ];
     }
 }
