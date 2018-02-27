@@ -93,6 +93,7 @@ function extractTokenFromHeader() {
         gpgEncryptSecret($authInfo["username"], $authInfo["password"], [$authInfo["username"]], "dummy");
     } catch (Exception $e) {
         if (strpos($e->getMessage(), "bad passphrase") !== false) {
+            http_response_code(401);
             echo json_encode(["status" => "unauthorized", "message" => "Invalid auth token. User password has changed."]);
             exit();
         }
