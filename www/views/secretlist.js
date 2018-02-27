@@ -42,8 +42,12 @@ var SecretList = {
 
             m("p", m("a[href=/secrets/new]", {oncreate: m.route.link}, "New Secret")),
 
-            m("form.pure-form.pure-form-aligned", [
-                m("input#searchbox[type=text][autofocus]", { oncreate: function(vnode) { setTimeout(function() { vnode.dom.focus(); }, 0); } }),
+            m("form.pure-form.pure-form-aligned", {
+                onsubmit: function(e) {
+                    e.preventDefault();
+                    search();
+                }}, [
+                m("input#searchbox[type=text][placeholder=Search][autofocus]", { oncreate: function(vnode) { setTimeout(function() { vnode.dom.focus(); }, 0); } }),
                 " ",
                 m("button[type=submit].pure-button", { onclick: search }, "Search")
             ]),
