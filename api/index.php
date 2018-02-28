@@ -46,7 +46,7 @@ if ($method == "POST" && $uri == "/authenticate") {
         $data["otp"] = "";
     }
 
-    if (isset($user["otpKey"]) && $expectedOtp != $data["otp"] && !in_array($data["otp"], $user["emergencyPasswords"])) {
+    if (isset($user["otpKey"]) && $expectedOtp != $data["otp"] && (isset($user["emergencyPasswords"]) && !in_array($data["otp"], $user["emergencyPasswords"]))) {
         sleep(3);
         http_response_code(401);
         echo json_encode(["status" => "error", "message" => "Invalid credentials."]);
@@ -54,7 +54,7 @@ if ($method == "POST" && $uri == "/authenticate") {
     }
 
     // Remove consumed emergency one-time password
-    if (isset($user["otpKey"]) && isset($data["otp"]) && in_array($data["otp"], $user["emergencyPasswords"])) {
+    if (isset($user["otpKey"]) && isset($data["otp"]) && (isset($user["emergencyPasswords"]) && in_array($data["otp"], $user["emergencyPasswords"]))) {
         writelog("Emergency one-time password was used for $username");
         $user["emergencyPasswords"] = array_diff($user["emergencyPasswords"], [$data["otp"]]);
         file_put_contents("$userProfilesPath/$username", json_encode($user));
