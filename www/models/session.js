@@ -35,7 +35,7 @@ var Session = {
     },
 
     refreshProfile: function() {
-        return User.load(Session.current.username)
+        return User.load(Session.getUsername())
         .then(function() {
             localStorage.setItem("profile", JSON.stringify(User.current));
         })

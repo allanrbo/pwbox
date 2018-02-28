@@ -76,35 +76,59 @@ var Profile = {
             !UserChangeOtpKey.current.otpUrl ?
                 null
                 : m(QrCodeWrapper, {data: UserChangeOtpKey.current.otpUrl}),
-            m("form#twoFactorGenForm.pure-form.pure-form-aligned", {
-                    onsubmit: function(e) {
-                        e.preventDefault();
-                        if (User.current.otpEnabled && !confirm("This will invalidate your existing key in your authenticator app as well as any emergency one-time passwords, and generate new ones. Are you sure?")) {
-                            return;
-                        }
-
-                        UserChangeOtpKey.save().then(function(result) {
-                            UserChangeOtpKey.current = result;
-                        });
-                    }
-                },
-                (User.current.otpEnabled && !UserChangeOtpKey.current.otpUrl) ? "Regenerating keys will invalidate your existing key in your authenticator app as well as any emergency one-time passwords, and generate new ones." : null,
+            m("form#twoFactorGenForm.pure-form.pure-form-aligned",
+                (User.current.otpEnabled && !UserChangeOtpKey.current.otpUrl) ? "Generating new keys will invalidate your existing key in your authenticator app as well as any emergency one-time passwords, and generate new ones." : null,
                 (!User.current.otpEnabled && !UserChangeOtpKey.current.otpUrl) ? m("fieldset", [
-                   m(".pure-controls", [
-                       m("button[type=submit].pure-button pure-button-primary", "Enable two-factor authentication")
-                   ])
+                    m(".pure-controls", [
+                        m("button.pure-button pure-button-primary", {
+                            onclick: function() {
+                                UserChangeOtpKey.save().then(function(result) {
+                                    UserChangeOtpKey.current = result;
+                                    Session.refreshProfile();
+                                });
+                            }
+                        }, "Enable two-factor authentication")
+                    ])
                 ]) : null,
                 (User.current.otpEnabled && !UserChangeOtpKey.current.otpUrl) ? m("fieldset", [
                     m(".pure-controls", [
-                        m("button[type=submit].pure-button pure-button-primary", "Regenerate two-factor authentication keys")
+                        m("button[type=submit].pure-button pure-button-primary", {
+                            onclick: function() {
+                                if (!confirm("This will invalidate your existing key in your authenticator app as well as any emergency one-time passwords, and generate new ones. Are you sure?")) {
+                                    return;
+                                }
+
+                                UserChangeOtpKey.save().then(function(result) {
+                                    UserChangeOtpKey.current = result;
+                                    Session.refreshProfile();
+                                });
+                            }
+                        },
+                        "Generate new two-factor authentication keys")
                     ])
                 ]) : null,
-            ),
-            !UserChangeOtpKey.current.emergencyPasswords ? null : [
-                m("p", "Emergency one-time use passwords:"),
-                m("pre", UserChangeOtpKey.current.emergencyPasswords.join("\n")),
-                m("p", "We suggest to note these emergency passwords on paper in a secure location, for use if the phone with the authenticator app gets lost. Each password can only be used once."),
-            ]
+                !UserChangeOtpKey.current.emergencyPasswords ? null : [
+                    m("p", "Emergency one-time use passwords:"),
+                    m("pre", UserChangeOtpKey.current.emergencyPasswords.join("\n")),
+                    m("p", "We suggest to note these emergency passwords on paper in a secure location, for use if the phone with the authenticator app gets lost. Each password can only be used once."),
+                ],
+                User.current.otpEnabled ? m("fieldset", [
+                    m(".pure-controls", [
+                        m("button.pure-button pure-button-primary",  {
+                            onclick: function() {
+                                if (!confirm("Are you sure you want to disable two-factor authentication?")) {
+                                    return;
+                                }
+
+                                UserChangeOtpKey.disable().then(function() {
+                                    UserChangeOtpKey.current = {};
+                                    Session.refreshProfile();
+                                });
+                            }
+                        }, "Disable two-factor authentication")
+                    ])
+                ]) : null
+            )
         ];
     }
 }

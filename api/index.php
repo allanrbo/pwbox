@@ -186,23 +186,33 @@ if ($method == "POST" && $uri == "/changeotpkey") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
-    list($secretHex, $otpUrl) = generateOtpKey();
-    $emergencyPasswords = generateEmergencyPasswords();
+    $data = json_decode(file_get_contents("php://input"), true);
+
 
     $username = $authInfo["username"];
     $userProfilesPath = getconfig()["userProfilesPath"];
     $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
-    $data["otpKey"] = $secretHex;
-    $data["emergencyPasswords"] = $emergencyPasswords;
-    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
-    $data["modifiedBy"] = $authInfo["username"];
-    file_put_contents("$userProfilesPath/$username", json_encode($data));
 
-    echo json_encode([
-        "status" => "ok",
-        "otpUrl" => $otpUrl,
-        "emergencyPasswords" => $emergencyPasswords
-    ]);
+    $r = ["status" => "ok"];
+
+    if (isset($data["disable"]) && $data["disable"] === true) {
+        unset($user["otpKey"]);
+        unset($user["emergencyPasswords"]);
+    } else {
+        list($secretHex, $otpUrl) = generateOtpKey();
+        $emergencyPasswords = generateEmergencyPasswords();
+        $user["otpKey"] = $secretHex;
+        $user["emergencyPasswords"] = $emergencyPasswords;
+
+        $r["otpUrl"] = $otpUrl;
+        $r["emergencyPasswords"] = $emergencyPasswords;
+    }
+
+    $user["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $user["modifiedBy"] = $authInfo["username"];
+    file_put_contents("$userProfilesPath/$username", json_encode($user));
+
+    echo json_encode($r);
 
     exit();
 }
