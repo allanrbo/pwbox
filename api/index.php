@@ -9,6 +9,9 @@ require("auth.inc.php");
 require("twofactor.inc.php");
 
 header("Content-Type: application/json");
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 $method = $_SERVER["REQUEST_METHOD"];
 $uriPrefix = getconfig()["uriPrefix"];
