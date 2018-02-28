@@ -550,6 +550,12 @@ if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matche
 
     $groupName = $matches[1];
 
+    if($groupName == "Administrators") {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Cannot delete administrators group."]);
+        exit();
+    }
+
     $groupsPath = getconfig()["groupsPath"];
     if (!file_exists("$groupsPath/$groupName")) {
         http_response_code(404);

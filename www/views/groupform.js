@@ -10,7 +10,7 @@ var GroupForm = {
 
     view: function() {
         var deleteButton = null;
-        if (Group.current.modified) {
+        if (Group.current.modified && Group.current.name != "Administrators") {
             deleteButton = m("button.pure-button", {onclick: function(e) {
                 e.preventDefault();
                 if (confirm("Really delete user group \"" + Group.current.name + "\"?")) {
@@ -70,7 +70,7 @@ var GroupForm = {
                         m("button[type=submit].pure-button pure-button-primary", "Save"),
                         " ",
                         deleteButton
-                    ]),
+                    ])
                 ])
             )
         ];
