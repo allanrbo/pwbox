@@ -91,7 +91,7 @@ var SecretForm = {
                 m("fieldset", [
                     m(".pure-control-group", [
                         m("label[for=title]", "Title"),
-                        m("input#title[type=text]", {
+                        m("input#title[type=text][autocomplete=off]", {
                             oninput: m.withAttr("value", function(value) {
                                 Secret.current.title = value;
                             }),
@@ -101,7 +101,7 @@ var SecretForm = {
 
                     m(".pure-control-group", [
                         m("label[for=username]", "Username"),
-                        m("input#username[type=text]", {
+                        m("input#username[type=text][autocomplete=off]", {
                             oninput: m.withAttr("value", function(value) {
                                 Secret.current.username = value;
                             }),
@@ -111,7 +111,7 @@ var SecretForm = {
 
                     m(".pure-control-group", [
                         m("label[for=password]", "Password"),
-                        m("input#password[type=text]", {
+                        m("input#password[type=text][autocomplete=off]", {
                             oninput: m.withAttr("value", function(value) {
                                 Secret.current.password = value;
                             }),

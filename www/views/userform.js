@@ -21,7 +21,7 @@ var UserForm = {
                 m("fieldset", [
                     m(".pure-control-group", [
                         m("label[for=username]", "Username"),
-                        m("input#username[type=text]", {
+                        m("input#username[type=text][autocomplete=off]", {
                             oninput: m.withAttr("value", function(value) {
                                 User.current.username = value;
                             }),
@@ -32,7 +32,7 @@ var UserForm = {
 
                     User.current.modified ? null : m(".pure-control-group", [
                         m("label[for=password]", "Password"),
-                        m("input#password[type=text]", {
+                        m("input#password[type=text][autocomplete=off]", {
                             oninput: m.withAttr("value", function(value) {
                                 User.current.password = value;
                             }),

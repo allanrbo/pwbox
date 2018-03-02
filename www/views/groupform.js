@@ -35,7 +35,7 @@ var GroupForm = {
                 m("fieldset", [
                     m(".pure-control-group", [
                         m("label[for=Name]", "Name"),
-                        m("input#name[type=text]", {
+                        m("input#name[type=text][autocomplete=off]", {
                             oninput: m.withAttr("value", function(value) {
                                 Group.current.name = value;
                             }),
