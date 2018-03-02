@@ -279,7 +279,13 @@ if ($method == "POST" && $uri == "/secret") {
     $authInfo = extractTokenFromHeader();
 
     $data = json_decode(file_get_contents("php://input"), true);
-    $recipients = [$authInfo["username"]];
+
+    if (!isset($data["owner"])) {
+        $data["owner"] = $authInfo["username"];
+    }
+
+    $recipients = [$data["owner"]];
+
     $recipients = array_unique(array_merge($recipients, getAllMembers(["Administrators"])));
 
     if (isset($data["groups"])) {
@@ -323,7 +329,13 @@ if ($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$secretsPath/$secretId");
 
     $data = json_decode(file_get_contents("php://input"), true);
-    $recipients = [$authInfo["username"]];
+
+    if (!isset($data["owner"])) {
+        $data["owner"] = $authInfo["username"];
+    }
+
+    $recipients = [$data["owner"]];
+
     $recipients = array_unique(array_merge($recipients, getAllMembers(["Administrators"])));
 
     if (isset($data["groups"])) {

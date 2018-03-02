@@ -6,6 +6,7 @@ var SecretForm = {
         }
 
         Group.loadList();
+        User.loadList();
     },
 
     view: function() {
@@ -50,6 +51,29 @@ var SecretForm = {
                         ])
                     );
                 })
+            ]);
+        }
+
+        var owner = null;
+        if (User.list.length > 1) {
+            owner = m(".pure-control-group", [
+                m("label[for=Owner]", "Owner"),
+                m("select#owner", {
+                    onchange: m.withAttr("value", function(value) {
+                        Secret.current.owner = value;
+                    })},
+                    User.list.map(function(user) {
+                        var selected = "";
+                        if ((!Secret.current.owner && user.username == Session.getUsername()) || (Secret.current.owner == user.username)) {
+                            selected = "selected";
+                        }
+
+                        return m("option", {
+                            value: user.username,
+                            selected: selected
+                        }, user.username);
+                    })
+                )
             ]);
         }
 
@@ -106,6 +130,8 @@ var SecretForm = {
                             rows: 6,
                         }),
                     ]),
+
+                    owner,
 
                     shareWithUserGroups,
 
