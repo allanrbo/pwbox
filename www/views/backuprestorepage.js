@@ -25,29 +25,33 @@ var BackupRestorePage = {
                 }
             }, "Export all secrets in plain text CSV")),
 
-            m("p", m("a[href=]", {
-                onclick: function() {
-                    var input = document.createElement("input");
-                    input.type = "file";
-                    input.style = "display: none";
-                    input.onchange = function(inputEvent) {
-                        var reader = new FileReader();
-                        reader.onload = function (readerEvent) {
-                            BackupRestore.putCsv(readerEvent.target.result).then(function() {
-                                alert("Successfully imported CSV");
-                            });
-                        }
+            m("p", [
+                m("a[href=]", {
+                    onclick: function() {
+                        var input = document.createElement("input");
+                        input.type = "file";
+                        input.style = "display: none";
+                        input.onchange = function(inputEvent) {
+                            var reader = new FileReader();
+                            reader.onload = function (readerEvent) {
+                                BackupRestore.putCsv(readerEvent.target.result).then(function() {
+                                    alert("Successfully imported CSV");
+                                });
+                            }
 
-                        reader.readAsText(inputEvent.target.files[0]);
-                    };
+                            reader.readAsText(inputEvent.target.files[0]);
+                        };
 
-                    document.body.appendChild(input);
-                    input.click();
-                    input.remove();
+                        document.body.appendChild(input);
+                        input.click();
+                        input.remove();
 
-                    return false;
-                }
-            }, "Import from plain text CSV")),
+                        return false;
+                    }
+                }, "Import and merge from plain text CSV"),
+                m("br"),
+                "Merges entries where the pwboxId column matches an existing entry. Creates new entries for all other rows.",
+            ]),
 
 
             m("p", m("a[href=/admin]", {oncreate: m.route.link}, "Export all secrets encrypted in a tar")),

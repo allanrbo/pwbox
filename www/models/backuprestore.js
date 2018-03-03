@@ -4,7 +4,13 @@ var BackupRestore = {
             method: "GET",
             url: "/api/csv",
             config: xhrConfig,
-            deserialize: function(value) {return value}
+            extract: function(xhr) {
+                if (xhr.status == 200) {
+                    return xhr.responseText;
+                }
+
+                return JSON.parse(xhr.responseText);
+            }
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
@@ -16,7 +22,7 @@ var BackupRestore = {
             url: "/api/csv",
             data: data,
             config: xhrConfig,
-            serialize: function(value) {return value}
+            serialize: function(value) { return value; }
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);

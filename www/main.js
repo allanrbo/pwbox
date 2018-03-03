@@ -7,9 +7,9 @@ var handleUnauthorized = function(e) {
     if(e.status == "unauthorized") {
         Session.logout();
         m.route.set('/login');
-    } else {
-        throw e;
     }
+    e.message = null;
+    throw e;
 };
 
 var alertErrorMessage = function(e) {
