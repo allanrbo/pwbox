@@ -590,6 +590,25 @@ if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matche
 }
 
 
+
+
+/*
+ * Dump CSV
+ */
+$matches = null;
+if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    $out = fopen('php://output', 'w');
+    fputcsv($out, array('this','is some', 'csv "stuff", you know.'));
+    fclose($out);
+
+    exit();
+}
+
+
+
 /*
  * Default endpoint
  */

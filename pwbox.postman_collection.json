@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "pwbox",
-		"_postman_id": "8251736f-ca33-84d6-2d1e-1f69fbcd4bec",
+		"_postman_id": "2126a2c7-dc6f-7b3a-176d-4dd086827438",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -33,7 +33,8 @@
 						"api",
 						"secret"
 					]
-				}
+				},
+				"description": ""
 			},
 			"response": []
 		},
@@ -61,7 +62,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"user123\",\n    \"password\": \"pass123\"\n}\n"
+					"raw": "{\n    \"username\": \"user123\",\n    \"password\": \"pass123\",\n    \"otp\": \"947326\"\n}\n"
 				},
 				"url": {
 					"raw": "{{endpoint}}/api/authenticate",
@@ -72,34 +73,8 @@
 						"api",
 						"authenticate"
 					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "user",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"username\": \"user123\",\n    \"password\": \"pass123\"\n}\n"
 				},
-				"url": {
-					"raw": "{{endpoint}}/api/user",
-					"host": [
-						"{{endpoint}}"
-					],
-					"path": [
-						"api",
-						"user"
-					]
-				}
+				"description": ""
 			},
 			"response": []
 		},
@@ -130,7 +105,8 @@
 						"api",
 						"secret"
 					]
-				}
+				},
+				"description": ""
 			},
 			"response": []
 		},
@@ -162,7 +138,8 @@
 						"secret",
 						"5a657a5fa8fc4"
 					]
-				}
+				},
+				"description": ""
 			},
 			"response": []
 		},
@@ -194,7 +171,36 @@
 						"secret",
 						"5a657a5fa8fc4"
 					]
-				}
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "user",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user123\",\n    \"password\": \"pass123\"\n}\n"
+				},
+				"url": {
+					"raw": "{{endpoint}}/api/user",
+					"host": [
+						"{{endpoint}}"
+					],
+					"path": [
+						"api",
+						"user"
+					]
+				},
+				"description": ""
 			},
 			"response": []
 		},
@@ -217,15 +223,82 @@
 					"raw": "{\n    \"name\": \"some secret 3\",\n    \"password\": \"superrock\",\n    \"expiry\": \"1234\",\n    \"notes\": \"hello world. Notice the nice notes.\"\n}\n"
 				},
 				"url": {
-					"raw": "{{endpoint}}/api/user",
+					"raw": "{{endpoint}}/api/csv",
 					"host": [
 						"{{endpoint}}"
 					],
 					"path": [
 						"api",
-						"user"
+						"csv"
 					]
-				}
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "user/:userId",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"some secret 3\",\n    \"password\": \"superrock\",\n    \"expiry\": \"1234\",\n    \"notes\": \"hello world. Notice the nice notes.\"\n}\n"
+				},
+				"url": {
+					"raw": "{{endpoint}}/api/user/user2",
+					"host": [
+						"{{endpoint}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"user2"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "user/:userId",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"lockedOut\": false\n}"
+				},
+				"url": {
+					"raw": "{{endpoint}}/api/user/user2",
+					"host": [
+						"{{endpoint}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"user2"
+					]
+				},
+				"description": ""
 			},
 			"response": []
 		},
@@ -245,7 +318,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\": \"group6\",\n    \"members\": [\n    \t\"user2\"\n    ]\n}\n"
+					"raw": "{\n    \"name\": \"group6\",\n    \"members\": [\n    \t\"user2\"\n    ]\n}\n"
 				},
 				"url": {
 					"raw": "{{endpoint}}/api/group",
@@ -288,7 +361,8 @@
 						"api",
 						"group"
 					]
-				}
+				},
+				"description": ""
 			},
 			"response": []
 		},
@@ -311,16 +385,17 @@
 					"raw": "{\n    \"name\": \"some secret 3\",\n    \"password\": \"superrock\",\n    \"expiry\": \"1234\",\n    \"notes\": \"hello world. Notice the nice notes.\"\n}\n"
 				},
 				"url": {
-					"raw": "{{endpoint}}/api/group/5a6561318fc66",
+					"raw": "{{endpoint}}/api/group/group6",
 					"host": [
 						"{{endpoint}}"
 					],
 					"path": [
 						"api",
 						"group",
-						"5a6561318fc66"
+						"group6"
 					]
-				}
+				},
+				"description": ""
 			},
 			"response": []
 		},
@@ -340,17 +415,17 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\": \"group4\",\n    \"members\": [\n    \t\"user123\",\n    \t\"user2\"\n    ]\n}\n"
+					"raw": "{\n    \"name\": \"group6x\",\n    \"members\": [\n        \"user123\",\n        \"user2\"\n    ]\n}"
 				},
 				"url": {
-					"raw": "{{endpoint}}/api/group/5a6561318fc66",
+					"raw": "{{endpoint}}/api/group/group6",
 					"host": [
 						"{{endpoint}}"
 					],
 					"path": [
 						"api",
 						"group",
-						"5a6561318fc66"
+						"group6"
 					]
 				},
 				"description": ""
