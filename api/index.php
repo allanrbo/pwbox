@@ -107,7 +107,7 @@ if ($method == "POST" && $uri == "/user") {
 
     unset($data["username"]);
     unset($data["password"]);
-    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
     $userProfilesPath = getconfig()["userProfilesPath"];
     file_put_contents("$userProfilesPath/$username", json_encode($data));
@@ -143,7 +143,7 @@ if ($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
 
     unset($data["username"]);
     unset($data["groupMemberships"]);
-    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
     $userProfilesPath = getconfig()["userProfilesPath"];
     file_put_contents("$userProfilesPath/$username", json_encode($data));
@@ -211,7 +211,7 @@ if ($method == "POST" && $uri == "/changeotpkey") {
         $r["emergencyPasswords"] = $emergencyPasswords;
     }
 
-    $user["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $user["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $user["modifiedBy"] = $authInfo["username"];
     file_put_contents("$userProfilesPath/$username", json_encode($user));
 
@@ -280,6 +280,12 @@ if ($method == "POST" && $uri == "/secret") {
 
     $data = json_decode(file_get_contents("php://input"), true);
 
+    if(!isset($data["title"]) || !$data["title"]) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Empty title not allowed."]);
+        exit();
+    }
+
     if (!isset($data["owner"])) {
         $data["owner"] = $authInfo["username"];
     }
@@ -293,7 +299,7 @@ if ($method == "POST" && $uri == "/secret") {
     }
 
     unset($data["id"]);
-    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
 
     $secretId = uniqid();
@@ -330,6 +336,12 @@ if ($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
 
     $data = json_decode(file_get_contents("php://input"), true);
 
+    if(!isset($data["title"]) || !$data["title"]) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Empty title not allowed."]);
+        exit();
+    }
+
     if (!isset($data["owner"])) {
         $data["owner"] = $authInfo["username"];
     }
@@ -343,7 +355,7 @@ if ($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     }
 
     unset($data["id"]);
-    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
 
     $secretsPath = getconfig()["secretsPath"];
@@ -453,7 +465,7 @@ if ($method == "POST" && $uri == "/group") {
     }
 
     unset($data["name"]);
-    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
     file_put_contents("$groupsPath/$groupName", json_encode($data));
 
@@ -490,7 +502,7 @@ if ($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches))
     $data["members"] = isset($data["members"]) ? $data["members"] : [];
 
     unset($data["name"]);
-    $data["modified"] = gmdate("Y-m-d\TH:i:s\Z");
+    $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
 
     file_put_contents("$groupsPath/$groupName", json_encode($data));
@@ -590,23 +602,171 @@ if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matche
 }
 
 
-
-
 /*
- * Dump CSV
+ * Export CSV
  */
 $matches = null;
 if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
+    header("Content-Type: text/csv");
 
-    $out = fopen('php://output', 'w');
-    fputcsv($out, array('this','is some', 'csv "stuff", you know.'));
+    $secretsPath = getconfig()["secretsPath"];
+    $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath);
+
+    $out = fopen("php://output", "w");
+
+    fputcsv($out, ["pwboxId", "title", "username", "password", "notes", "owner", "groups"]);
+    foreach ($secrets as $secret) {
+        $s = gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$secretsPath/$secret[id]");
+
+        $id = isset($s["id"]) ? $s["id"] : "";
+        $title = isset($s["title"]) ? $s["title"] : "";
+        $username = isset($s["username"]) ? $s["username"] : "";
+        $password = isset($s["password"]) ? $s["password"] : "";
+        $notes = isset($s["notes"]) ? $s["notes"] : "";
+        $owner = isset($s["owner"]) ? $s["owner"] : "";
+        $groups = isset($s["groups"]) ? implode(",", $s["groups"]) : "";
+
+        fputcsv($out, [$secret["id"], $title, $username, $password, $notes, $owner, $groups]);
+    };
+
     fclose($out);
-
     exit();
 }
 
+
+/*
+ * Import CSV
+ */
+$matches = null;
+if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
+    $secretsPath = getconfig()["secretsPath"];
+    $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath);
+
+    $expectedColumns = ["pwboxId", "title", "username", "password", "notes", "owner", "groups"];
+
+    $in = fopen("php://input", "r");
+
+    // Parse and verify header row
+    $headerrow = fgetcsv($in);
+    if ($headerrow != $expectedColumns) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Incorrect column headers in given CSV file. Please ensure the format is exactly as in the exported CSV."]);
+        exit();
+    }
+
+    // Parse and verify all rows
+    $users = gpgListAllUsers();
+    $groupsPath = getconfig()["groupsPath"];
+    $groups = array_diff(scandir($groupsPath), [".", ".."]);
+    $toImport = [];
+    while (!feof($in)) {
+        $row = fgetcsv($in);
+
+        if (!$row || count($row) == 0) {
+            continue;
+        }
+
+        if (count($row) != count($expectedColumns)) {
+            http_response_code(400);
+            writelog("Got row with " . count($row) . " columns but expected " . count($expectedColumns) . " columns");
+            echo json_encode(["status" => "error", "message" => "Row with incorrect column count in given CSV file. Please ensure the format is exactly as in the exported CSV."]);
+            exit();
+        }
+
+        $o = [];
+        for ($i=0; $i < count($expectedColumns); $i++) {
+            $o[$expectedColumns[$i]] = $row[$i];
+        }
+
+        // Verify the title column
+        if (!$o["title"]) {
+            http_response_code(400);
+            writelog("Got row with empty title column");
+            echo json_encode(["status" => "error", "message" => "A row contained an empty title."]);
+            exit();
+        }
+
+        // Verify the owner column
+        if (!$o["owner"]) {
+            $o["owner"] = $authInfo["username"];
+        }
+        if (!in_array($o["owner"], $users)) {
+            http_response_code(400);
+            writelog("Got row with unknown owner " . $o["owner"]);
+            echo json_encode(["status" => "error", "message" => "A row contained an unknown user in the owner column."]);
+            exit();
+        }
+
+        // Parse and verify the groups column
+        if (!$o["groups"]) {
+            $o["groups"] = [];
+        } else {
+            $o["groups"] = explode(",", $o["groups"]);
+            foreach ($o["groups"] as $group) {
+                if (!in_array($group, $groups)) {
+                    http_response_code(400);
+                    writelog("Got row with unknown group " . $group);
+                    echo json_encode(["status" => "error", "message" => "A row contained an unknown group in the groups column."]);
+                    exit();
+                }
+            }
+        }
+
+        $toImport[] = $o;
+    }
+
+    fclose($in);
+
+    // Import rows
+    $secretsPath = getconfig()["secretsPath"];
+    foreach ($toImport as $row) {
+        $secret = [];
+        $secretId = uniqid();
+
+        if ($row["pwboxId"] && file_exists("$secretsPath/$row[pwboxId]")) {
+            $secret = gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$secretsPath/$row[pwboxId]");
+            $secretId = $row["pwboxId"];
+        }
+
+        $modified = false;
+        foreach ($expectedColumns as $col) {
+            if ($col == "pwboxId") {
+                continue;
+            }
+
+            if (!isset($secret[$col]) || $secret[$col] != $row[$col]) {
+                $secret[$col] = $row[$col];
+                $modified = true;
+            }
+        }
+
+        if (!$modified) {
+            continue;
+        }
+
+        $recipients = [$secret["owner"]];
+        $recipients = array_unique(array_merge($recipients, getAllMembers(["Administrators"])));
+        $recipients = array_unique(array_merge($recipients, getAllMembers($secret["groups"])));
+        $secret["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
+        $secret["modifiedBy"] = $authInfo["username"];
+        $secret["id"] = $secretId;
+        $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $recipients, json_encode($secret));
+        file_put_contents("$secretsPath/$secretId", $ciphertext);
+    }
+
+    exit();
+}
 
 
 /*

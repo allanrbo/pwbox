@@ -29,6 +29,6 @@ m.route(document.body, "/secrets", {
     "/admin/users": { render: function() { return m(Layout, m(UserList)); } },
     "/admin/users/:key": { render: function(vnode) { return m(Layout, vnode.attrs, m(UserForm, vnode.attrs)); } },
     "/admin/profile": { render: function() { return m(Layout, m(Profile)); } },
-    "/admin/backuprestore": { render: function() { return m(Layout, m(BackupRestore)); } },
+    "/admin/backuprestore": { render: function() { return m(Layout, m(BackupRestorePage)); } },
     "/logout": { render: function() { Session.logout(); m.route.set("/login"); } }
 });
