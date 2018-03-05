@@ -609,6 +609,13 @@ $matches = null;
 if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
+
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
     header("Content-Type: text/csv");
 
     $secretsPath = getconfig()["secretsPath"];
@@ -764,6 +771,135 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
         $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $recipients, json_encode($secret));
         file_put_contents("$secretsPath/$secretId", $ciphertext);
     }
+
+    echo json_encode(["status" => "ok"]);
+    exit();
+}
+
+
+/*
+ * Export tar of encrypted secrets
+ */
+$matches = null;
+if ($method == "GET" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
+    header("Content-Type: application/tar");
+
+    $secretsPath = getconfig()["secretsPath"];
+
+    $dirname = dirname($secretsPath);
+    $basename  = basename($secretsPath);
+    echo shell_exec("tar --to-stdout -c --owner=0 --group=0 -C $dirname $basename");
+
+    exit();
+}
+
+
+/*
+ * Import tar of encrypted secrets
+ */
+$matches = null;
+if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
+    $data = file_get_contents("php://input");
+
+    $tmpDir = "/tmp/" . uniqid();
+    shell_exec("mkdir $tmpDir");
+    register_shutdown_function(function() use ($tmpDir) {
+        shell_exec("rm -fr $tmpDir");
+    });
+
+    file_put_contents("$tmpDir/secrets.tar", $data);
+    shell_exec("tar -xf $tmpDir/secrets.tar -C $tmpDir");
+
+    // Ensure secrets dir exists
+    if(!file_exists("$tmpDir/secrets/")) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Given tar file does not contain a secrets directory."]);
+        exit();
+    }
+
+    $users = gpgListAllUsers();
+    $groupsPath = getconfig()["groupsPath"];
+    $groups = array_diff(scandir($groupsPath), [".", ".."]);
+
+    // Ensure able to read all given secrets, and that all referenced users and groups exist
+    foreach (array_diff(scandir("$tmpDir/secrets/"), [".", ".."]) as $key => $value) {
+        $secretId = $value;
+
+        $path = "$tmpDir/secrets/$secretId";
+        $ciphertext = file_get_contents($path);
+        $recipients = gpgRecipientsFromCiphertext($ciphertext);
+        if(!in_array($authInfo["username"], $recipients)) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Tar file contained a secret your key were not able to decrypt. Did not import anything."]);
+            exit();
+        }
+
+        $secret = gpgGetSecretFile($authInfo["username"], $authInfo["password"], $path);
+
+        // Verify title field
+        if(!isset($secret["title"]) || !$secret["title"]) {
+            http_response_code(400);
+            writelog("Tar file contained a secret with empty title " . $secretId);
+            echo json_encode(["status" => "error", "message" => "Tar file contained a secret with empty title. Did not import anything."]);
+            exit();
+        }
+
+        if (!isset($secret["owner"])) {
+            $secret["owner"] = $authInfo["username"];
+        }
+
+        // Verify the owner field
+        if (!in_array($secret["owner"], $users)) {
+            http_response_code(400);
+            writelog("Tar file contained a secret with unknown owner " . $o["owner"]);
+            echo json_encode(["status" => "error", "message" => "Tar file contained a secret with unknown owner. Did not import anything."]);
+            exit();
+        }
+
+        // Verify the groups field
+        if (isset($secret["groups"])) {
+            foreach ($secret["groups"] as $group) {
+                if (!in_array($group, $groups)) {
+                    http_response_code(400);
+                    writelog("Tar file contained a secret with an unknown group " . $group);
+                    echo json_encode(["status" => "error", "message" => "Tar file contained a secret with an unknown group. Did not import anything."]);
+                    exit();
+                }
+            }
+        }
+
+        // Recalculate field, in case owner or group membership changed since this secret was exported
+        $recipients = [$secret["owner"]];
+        $recipients = array_unique(array_merge($recipients, getAllMembers(["Administrators"])));
+        if (isset($secret["groups"])) {
+            $recipients = array_unique(array_merge($recipients, getAllMembers($secret["groups"])));
+        }
+
+        // Rewrite secret, in case owner or group membership changed since this secret was exported
+        $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $recipients, json_encode($secret));
+        file_put_contents($path, $ciphertext);
+    }
+
+    $secretsPath = getconfig()["secretsPath"];
+    shell_exec("mv $tmpDir/secrets/* $secretsPath");
 
     exit();
 }

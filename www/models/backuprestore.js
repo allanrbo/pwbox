@@ -26,5 +26,34 @@ var BackupRestore = {
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
+    },
+
+    getTarSecrets: function() {
+        return m.request({
+            method: "GET",
+            url: "/api/backuptarsecrets",
+            config: xhrConfig,
+            extract: function(xhr) {
+                if (xhr.status == 200) {
+                    return xhr.responseText;
+                }
+
+                return JSON.parse(xhr.responseText);
+            }
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    putTarSecrets: function(data) {
+        return m.request({
+            method: "PUT",
+            url: "/api/backuptarsecrets",
+            data: data,
+            config: xhrConfig,
+            serialize: function(value) { return value; }
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
     }
 }
