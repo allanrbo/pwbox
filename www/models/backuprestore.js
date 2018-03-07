@@ -3,14 +3,8 @@ var BackupRestore = {
         return m.request({
             method: "GET",
             url: "/api/csv",
-            config: xhrConfig,
-            extract: function(xhr) {
-                if (xhr.status == 200) {
-                    return xhr.responseText;
-                }
-
-                return JSON.parse(xhr.responseText);
-            }
+            config: xhrConfigBinary,
+            extract: xhrExtractBinary
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
@@ -32,14 +26,8 @@ var BackupRestore = {
         return m.request({
             method: "GET",
             url: "/api/backuptarsecrets",
-            config: xhrConfig,
-            extract: function(xhr) {
-                if (xhr.status == 200) {
-                    return xhr.responseText;
-                }
-
-                return JSON.parse(xhr.responseText);
-            }
+            config: xhrConfigBinary,
+            extract: xhrExtractBinary
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
@@ -49,6 +37,29 @@ var BackupRestore = {
         return m.request({
             method: "PUT",
             url: "/api/backuptarsecrets",
+            data: data,
+            config: xhrConfig,
+            serialize: function(value) { return value; }
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    getTarUsers: function() {
+        return m.request({
+            method: "GET",
+            url: "/api/backuptarusers",
+            config: xhrConfigBinary,
+            extract: xhrExtractBinary
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    putTarUsers: function(data) {
+        return m.request({
+            method: "PUT",
+            url: "/api/backuptarusers",
             data: data,
             config: xhrConfig,
             serialize: function(value) { return value; }

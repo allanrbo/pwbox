@@ -906,6 +906,43 @@ if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
 
 
 /*
+ * Export tar of users, keys, and groups
+ */
+$matches = null;
+if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
+    header("Content-Type: application/tar+gzip");
+    header("Content-Transfer-Encoding: binary");
+
+    $tmpDir = "/tmp/" . uniqid();
+    shell_exec("mkdir $tmpDir");
+    register_shutdown_function(function() use ($tmpDir) {
+        shell_exec("rm -fr $tmpDir");
+    });
+
+    $gpgHomePath = getconfig()["gpghome"];
+    $groupsPath = getconfig()["groupsPath"];
+    $userProfilesPath = getconfig()["userProfilesPath"];
+
+    shell_exec("cp -r $gpgHomePath $tmpDir/gpghome");
+    shell_exec("cp -r $groupsPath $tmpDir/groups");
+    shell_exec("cp -r $userProfilesPath $tmpDir/userprofiles");
+
+    echo shell_exec("tar --to-stdout -c --owner=0 --group=0 -C $tmpDir .");
+
+    exit();
+}
+
+
+/*
  * Default endpoint
  */
 http_response_code(404);

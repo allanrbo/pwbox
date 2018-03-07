@@ -41,6 +41,7 @@ var BackupRestorePage = {
                                 });
                             }
 
+                            // TODO binary???
                             reader.readAsText(inputEvent.target.files[0]);
                         };
 
@@ -52,7 +53,7 @@ var BackupRestorePage = {
                     }
                 }, "Import and merge from plain text CSV"),
                 m("br"),
-                "Merges entries where the pwboxId column matches an existing entry. Creates new entries for all other rows.",
+                "Export first to learn the format. Merges entries where the pwboxId column matches an existing entry. Creates new entries for all other rows.",
             ]),
 
             m("h3.content-subhead", "Encrypted tar file"),
@@ -90,6 +91,7 @@ var BackupRestorePage = {
                                 });
                             }
 
+                            // TODO binary???
                             reader.readAsText(inputEvent.target.files[0]);
                         };
 
@@ -102,7 +104,25 @@ var BackupRestorePage = {
                 }, "Import and replace secrets from tar of encrypted secrets")
             ]),
 
-            m("p", m("a[href=/admin]", {oncreate: m.route.link}, "Export all users and their encryption keys and groups to a tar")),
+            m("p", m("a[href=]", {
+                onclick: function() {
+                    BackupRestore.getTarUsers().then(function(result) {
+                        var blob = new Blob([result], {type: "application/tar"});
+                        var a = document.createElement("a");
+                        a.style = "display: none";
+                        document.body.appendChild(a);
+                        var url = window.URL.createObjectURL(blob);
+                        a.href = url;
+                        a.download = "users.tar";
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    });
+
+                    return false;
+                }
+            }, "Export all users and their encryption keys and groups to a tar")),
+
             m("p", m("a[href=/admin]", {oncreate: m.route.link}, "Import users and their encryption keys and groups from a tar")),
         ];
     }

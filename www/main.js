@@ -1,24 +1,3 @@
-var xhrConfig = function(xhr) {
-  xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.setRequestHeader("Authorization", "Bearer " + Session.getToken());
-};
-
-var handleUnauthorized = function(e) {
-    if(e.status == "unauthorized") {
-        Session.logout();
-        m.route.set('/login');
-        e.message = null;
-    }
-    throw e;
-};
-
-var alertErrorMessage = function(e) {
-    if(e.message) {
-        alert(e.message);
-    }
-    throw e;
-};
-
 m.route(document.body, "/secrets", {
     "/login": { render: function() { return m(LoginForm); } },
     "/secrets": { render: function() { return m(Layout, m(SecretList)); } },
