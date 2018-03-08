@@ -75,12 +75,7 @@ if ($method == "POST" && $uri == "/authenticate") {
 if ($method == "POST" && $uri == "/user") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
-    }
+    requireAdminGroup($authInfo);
 
     $data = json_decode(file_get_contents("php://input"), true);
 
@@ -127,10 +122,8 @@ if ($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
 
     $username = $matches[1];
 
-    if($username != $authInfo["username"] && !isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
+    if($username != $authInfo["username"]) {
+        requireAdminGroup($authInfo);
     }
 
     $data = json_decode(file_get_contents("php://input"), true);
@@ -247,10 +240,8 @@ if ($method == "GET" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
 
     $username = $matches[1];
 
-    if($username != $authInfo["username"] && !isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
+    if($username != $authInfo["username"]) {
+        requireAdminGroup($authInfo);
     }
 
     if (gpgUserExists($username)) {
@@ -436,12 +427,7 @@ if ($method == "DELETE" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)
 if ($method == "POST" && $uri == "/group") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
-    }
+    requireAdminGroup($authInfo);
 
     $data = json_decode(file_get_contents("php://input"), true);
     $data["members"] = isset($data["members"]) ? $data["members"] : [];
@@ -481,14 +467,9 @@ $matches = null;
 if ($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
+    requireAdminGroup($authInfo);
 
     $groupName = $matches[1];
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
-    }
 
     // Ensure the group exists already
     $groupsPath = getconfig()["groupsPath"];
@@ -543,6 +524,7 @@ $matches = null;
 if ($method == "GET" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
+    requireAdminGroup($authInfo);
 
     $groupName = $matches[1];
 
@@ -571,6 +553,7 @@ $matches = null;
 if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
+    requireAdminGroup($authInfo);
 
     $groupName = $matches[1];
 
@@ -584,12 +567,6 @@ if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matche
     if (!file_exists("$groupsPath/$groupName")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
-        exit();
-    }
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
         exit();
     }
 
@@ -609,12 +586,7 @@ $matches = null;
 if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
-    }
+    requireAdminGroup($authInfo);
 
     header("Content-Type: text/csv");
 
@@ -650,12 +622,7 @@ $matches = null;
 if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
-    }
+    requireAdminGroup($authInfo);
 
     $secretsPath = getconfig()["secretsPath"];
     $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath);
@@ -789,12 +756,7 @@ if ($method == "GET" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
         // Proceed to allow download of backup tar based on backup token
     } else {
         $authInfo = extractTokenFromHeader();
-
-        if(!isGroupMember("Administrators", $authInfo["username"])) {
-            http_response_code(400);
-            echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-            exit();
-        }
+        requireAdminGroup($authInfo);
     }
 
     header("Content-Type: application/tar");
@@ -818,12 +780,7 @@ $matches = null;
 if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
-    }
+    requireAdminGroup($authInfo);
 
     $data = file_get_contents("php://input");
 
@@ -925,12 +882,7 @@ if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
         // Proceed to allow download of backup tar based on backup token
     } else {
         $authInfo = extractTokenFromHeader();
-
-        if(!isGroupMember("Administrators", $authInfo["username"])) {
-            http_response_code(400);
-            echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-            exit();
-        }
+        requireAdminGroup($authInfo);
     }
 
     header("Content-Type: application/tar");
@@ -964,12 +916,7 @@ $matches = null;
 if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
-    }
+    requireAdminGroup($authInfo);
 
     $data = file_get_contents("php://input");
 
@@ -1023,12 +970,7 @@ $matches = null;
 if ($method == "GET" && $uri == "/backuptokens") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
-    }
+    requireAdminGroup($authInfo);
 
     $backupTokensPath = getconfig()["backupTokensPath"];
 
@@ -1048,12 +990,7 @@ $matches = null;
 if ($method == "POST" && ($uri == "/changebackuptoken/secrets" || $uri == "/changebackuptoken/users")) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
-
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
-    }
+    requireAdminGroup($authInfo);
 
     $data = json_decode(file_get_contents("php://input"), true);
 

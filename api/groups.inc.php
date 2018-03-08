@@ -87,3 +87,11 @@ function reencryptSecretsUsingGroup($authInfo, $groupName, $removeGroup) {
         }
     }
 }
+
+function requireAdminGroup($authInfo) {
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+}
