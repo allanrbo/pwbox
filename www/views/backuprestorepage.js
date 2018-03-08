@@ -1,5 +1,8 @@
 var BackupRestorePage = {
     oninit: function(vnode) {
+        BackupRestore.loadBackupTokenStatus();
+        BackupRestore.secretsBackupToken = {};
+        BackupRestore.usersBackupToken = {};
     },
 
     view: function() {
@@ -47,6 +50,50 @@ var BackupRestorePage = {
             }
         };
 
+        var makeBackupTokenButtonForm = function(saveFunc, disableFunc, isTokenEnabled, tokenPostedObj, tokenPostedObjSetter, exampleTarFileName) {
+            return m("form.pure-form.pure-form-aligned",
+                m("fieldset", [
+                    m(".pure-controls", [
+                        m("button.pure-button pure-button-primary", {
+                            onclick: function() {
+                                if (isTokenEnabled && !confirm("Generating a new token will invalidate your old external backup token. Are you sure?")) {
+                                    return;
+                                }
+
+                                saveFunc().then(function(result) {
+                                    tokenPostedObjSetter(result);
+                                    BackupRestore.loadBackupTokenStatus();
+                                });
+                            }
+                        }, !isTokenEnabled ? "Enable external tar backup" : "Generate new token for external tar backup")
+                    ])
+                ]),
+                isTokenEnabled ? m("fieldset", [
+                    m(".pure-controls", [
+                        m("button[type=submit].pure-button pure-button-primary", {
+                            onclick: function() {
+                                if (!confirm("This will disable external tar backup. Are you sure?")) {
+                                    return;
+                                }
+
+                                disableFunc().then(function(result) {
+                                    BackupRestore.loadBackupTokenStatus();
+                                });
+                            }
+                        },
+                        "Disable external tar backup")
+                    ])
+                ]) : null,
+                (isTokenEnabled && tokenPostedObj.token) ? [
+                    m("p", "Backup tar URL:"),
+                    m("pre", {style: "white-space:pre-wrap; word-wrap:break-word; padding-left:2em;"}, tokenPostedObj.url),
+                    m("p", "Bearer token:"),
+                    m("pre", {style: "white-space:pre-wrap; word-wrap:break-word; padding-left:2em;"}, tokenPostedObj.token),
+                    m("p", "Wget example line:"),
+                    m("pre", {style: "white-space:pre-wrap; word-wrap:break-word; padding-left:2em;"}, "wget " + tokenPostedObj.url + " \\\n-O " + exampleTarFileName + " \\\n--header \"Authorization: Bearer " + tokenPostedObj.token + "\"")
+                ] : null
+            );
+        }
 
 
         return [
@@ -66,7 +113,7 @@ var BackupRestorePage = {
                 "Export first to learn the format. Import merges entries where the pwboxId column matches an existing entry. Creates new entries for all other rows.",
             ]),
 
-            m("h3.content-subhead", "Encrypted tar file"),
+            m("h3.content-subhead", "Encrypted tar file of secrets"),
 
             m("p", m("a[href=]", {
                 onclick: makeFileDownloader(BackupRestore.getTarSecrets, "secrets.tar", "application/tar")
@@ -78,6 +125,8 @@ var BackupRestorePage = {
                 }, "Import and replace secrets from tar of encrypted secrets")
             ]),
 
+            m("h3.content-subhead", "Encrypted tar file of users, keys, and groups"),
+
             m("p", m("a[href=]", {
                 onclick: makeFileDownloader(BackupRestore.getTarUsers, "users.tar", "application/tar")
             }, "Export all users and their encryption keys and groups to a tar")),
@@ -86,7 +135,30 @@ var BackupRestorePage = {
                 m("a[href=]", {
                     onclick: makeFileUploader(BackupRestore.putTarUsers, "Successfully imported users and their encryption keys and groups from given tar.")
                 }, "Import users and their encryption keys and groups from a tar")
-            ])
+            ]),
+
+            m("h3.content-subhead", "External backup of secrets"),
+
+            makeBackupTokenButtonForm(
+                BackupRestore.secretsBackupTokenSave,
+                BackupRestore.secretsBackupTokenDisable,
+                BackupRestore.backupTokenStatus.secretBackupTokenEnabled,
+                BackupRestore.secretsBackupToken,
+                function(value) { BackupRestore.secretsBackupToken = value; },
+                "secrets.tar"
+            ),
+
+            m("h3.content-subhead", "External backup of users, keys, and groups"),
+
+            makeBackupTokenButtonForm(
+                BackupRestore.usersBackupTokenSave,
+                BackupRestore.usersBackupTokenDisable,
+                BackupRestore.backupTokenStatus.usersBackupTokenEnabled,
+                BackupRestore.usersBackupToken,
+                function(value) { BackupRestore.usersBackupToken = value; },
+                "users.tar"
+            ),
+
         ];
     }
 }

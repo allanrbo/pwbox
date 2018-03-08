@@ -783,15 +783,23 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
 $matches = null;
 if ($method == "GET" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
     writelog("Requested $method on $uri");
-    $authInfo = extractTokenFromHeader();
 
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
+    $backupTokensPath = getconfig()["backupTokensPath"];
+    if (file_exists("$backupTokensPath/secretsbackup") && $_SERVER["HTTP_AUTHORIZATION"] === "Bearer " . json_decode(file_get_contents("$backupTokensPath/secretsbackup"), true)["token"]) {
+        // Proceed to allow download of backup tar based on backup token
+    } else {
+        $authInfo = extractTokenFromHeader();
+
+        if(!isGroupMember("Administrators", $authInfo["username"])) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+            exit();
+        }
     }
 
     header("Content-Type: application/tar");
+    header("Content-Transfer-Encoding: binary");
+    header("Content-Disposition: attachment; filename=\"secrets.tar\"");
 
     $secretsPath = getconfig()["secretsPath"];
 
@@ -911,16 +919,23 @@ if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
 $matches = null;
 if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
     writelog("Requested $method on $uri");
-    $authInfo = extractTokenFromHeader();
 
-    if(!isGroupMember("Administrators", $authInfo["username"])) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
-        exit();
+    $backupTokensPath = getconfig()["backupTokensPath"];
+    if (file_exists("$backupTokensPath/usersbackup") && $_SERVER["HTTP_AUTHORIZATION"] === "Bearer " . json_decode(file_get_contents("$backupTokensPath/usersbackup"), true)["token"]) {
+        // Proceed to allow download of backup tar based on backup token
+    } else {
+        $authInfo = extractTokenFromHeader();
+
+        if(!isGroupMember("Administrators", $authInfo["username"])) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+            exit();
+        }
     }
 
-    header("Content-Type: application/tar+gzip");
+    header("Content-Type: application/tar");
     header("Content-Transfer-Encoding: binary");
+    header("Content-Disposition: attachment; filename=\"users.tar\"");
 
     $tmpDir = "/tmp/" . uniqid();
     shell_exec("mkdir $tmpDir");
@@ -1000,11 +1015,37 @@ if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
 }
 
 
+
 /*
- * Backup key generation endpoint for secrets
+ * Backup key status endpoint
  */
 $matches = null;
-if ($method == "POST" && $uri == "/changesecretsbackupkey") {
+if ($method == "GET" && $uri == "/backuptokens") {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
+    $backupTokensPath = getconfig()["backupTokensPath"];
+
+    echo json_encode([
+        "secretBackupTokenEnabled" => file_exists("$backupTokensPath/secretsbackup"),
+        "usersBackupTokenEnabled" => file_exists("$backupTokensPath/usersbackup")
+    ]);
+
+    exit();
+}
+
+
+/*
+ * Backup token generation endpoint
+ */
+$matches = null;
+if ($method == "POST" && ($uri == "/changebackuptoken/secrets" || $uri == "/changebackuptoken/users")) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
@@ -1016,26 +1057,36 @@ if ($method == "POST" && $uri == "/changesecretsbackupkey") {
 
     $data = json_decode(file_get_contents("php://input"), true);
 
-    $backupKeysPath = getconfig()["backupKeysPath"];
+    $backupTokensPath = getconfig()["backupTokensPath"];
+    $tokenFilePath = null;
+    if ($uri == "/changebackuptoken/secrets") $tokenFilePath = "$backupTokensPath/secretsbackup";
+    if ($uri == "/changebackuptoken/users") $tokenFilePath = "$backupTokensPath/usersbackup";
 
     $r = ["status" => "ok"];
 
     if (isset($data["disable"]) && $data["disable"] === true) {
-        unlink("$backupKeysPath/secretsbackupkey");
+        unlink($tokenFilePath);
     } else {
-        $key = base64_encode(openssl_random_pseudo_bytes(256));
+        $token = base64_encode(openssl_random_pseudo_bytes(512));
 
-        $r["secretsbackupkey"] = $key;
-        file_put_contents("$backupKeysPath/secretsbackupkey", [
-            "secretsbackupkey" => $key,
+        $endpoint = null;
+        if ($uri == "/changebackuptoken/secrets") $endpoint = "/backuptarsecrets";
+        if ($uri == "/changebackuptoken/users") $endpoint = "/backuptarusers";
+
+        $r["url"] = $_SERVER["REQUEST_SCHEME"] . "://" . $_SERVER["HTTP_HOST"] . getconfig()["uriPrefix"] . $endpoint;
+        $r["token"] = $token;
+
+        file_put_contents($tokenFilePath, json_encode([
+            "token" => $token,
             "modified" => gmdate("Y-m-d\\TH:i:s\\Z")
-        ]);
+        ]));
     }
 
     echo json_encode($r);
 
     exit();
 }
+
 
 
 /*

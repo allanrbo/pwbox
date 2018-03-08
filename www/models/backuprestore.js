@@ -1,4 +1,8 @@
 var BackupRestore = {
+    backupTokenStatus: {},
+    secretsBackupToken: {},
+    usersBackupToken: {},
+
     getCsv: function() {
         return m.request({
             method: "GET",
@@ -63,6 +67,78 @@ var BackupRestore = {
             data: data,
             config: xhrConfig,
             serialize: function(value) { return value; }
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    loadBackupTokenStatus: function() {
+        var method = "GET";
+        var url = "/api/backuptokens";
+
+        return m.request({
+            method: method,
+            url: url,
+            config: xhrConfig
+        })
+        .then(function(result) {
+            BackupRestore.backupTokenStatus = result;
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    secretsBackupTokenSave: function() {
+        var method = "POST";
+        var url = "/api/changebackuptoken/secrets";
+
+        return m.request({
+            method: method,
+            url: url,
+            data: {},
+            config: xhrConfig
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    secretsBackupTokenDisable: function() {
+        var method = "POST";
+        var url = "/api/changebackuptoken/secrets";
+
+        return m.request({
+            method: method,
+            url: url,
+            data: {disable: true},
+            config: xhrConfig
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    usersBackupTokenSave: function() {
+        var method = "POST";
+        var url = "/api/changebackuptoken/users";
+
+        return m.request({
+            method: method,
+            url: url,
+            data: {},
+            config: xhrConfig
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    usersBackupTokenDisable: function() {
+        var method = "POST";
+        var url = "/api/changebackuptoken/users";
+
+        return m.request({
+            method: method,
+            url: url,
+            data: {disable: true},
+            config: xhrConfig
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);

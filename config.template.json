@@ -5,6 +5,6 @@
     "secretsPath": "/pwbox/data/secrets",
     "groupsPath": "/pwbox/data/groups",
     "userProfilesPath": "/pwbox/data/userprofiles",
-    "backupKeysPath": "/pwbox/data/backupkeys",
+    "backupTokensPath": "/pwbox/data/backuptokens",
     "tokenExpiryMinutes": 45
 }
