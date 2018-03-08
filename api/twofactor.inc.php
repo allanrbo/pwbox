@@ -18,7 +18,6 @@ function generateEmergencyPasswords() {
     for ($i = 0; $i < 5; $i++) {
         $base32 = new Base2n(5, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567', FALSE, TRUE, TRUE);
         $secretBin = openssl_random_pseudo_bytes(10);
-        $secretHex = bin2hex($secretBin);
         $secretBase32 = $base32->encode($secretBin);
         $keys[] = $secretBase32;
     }

@@ -96,4 +96,19 @@ function ensurePermissions($config) {
         echo json_encode(["error" => "Internal error. Not owner of user profiles directory."]);
         exit();
     }
+
+    if (!file_exists($config["backupKeysPath"])) {
+        $r = @mkdir($config["backupKeysPath"], 0700, true);
+        if ($r === false) {
+            http_response_code(500);
+            echo json_encode(["error" => "Internal error. Failed to create backup keys directory."]);
+            exit();
+        }
+    }
+
+    if (fileowner($config["backupKeysPath"]) != $uid) {
+        http_response_code(500);
+        echo json_encode(["error" => "Internal error. Not owner of backup keys directory."]);
+        exit();
+    }
 }

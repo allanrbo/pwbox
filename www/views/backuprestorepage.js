@@ -86,9 +86,7 @@ var BackupRestorePage = {
                 m("a[href=]", {
                     onclick: makeFileUploader(BackupRestore.putTarUsers, "Successfully imported users and their encryption keys and groups from given tar.")
                 }, "Import users and their encryption keys and groups from a tar")
-            ]),
-
-            m("p", m("a[href=/admin]", {oncreate: m.route.link}, "")),
+            ])
         ];
     }
 }

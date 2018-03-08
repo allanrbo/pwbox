@@ -1001,6 +1001,44 @@ if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
 
 
 /*
+ * Backup key generation endpoint for secrets
+ */
+$matches = null;
+if ($method == "POST" && $uri == "/changesecretsbackupkey") {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    if(!isGroupMember("Administrators", $authInfo["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
+        exit();
+    }
+
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    $backupKeysPath = getconfig()["backupKeysPath"];
+
+    $r = ["status" => "ok"];
+
+    if (isset($data["disable"]) && $data["disable"] === true) {
+        unlink("$backupKeysPath/secretsbackupkey");
+    } else {
+        $key = base64_encode(openssl_random_pseudo_bytes(256));
+
+        $r["secretsbackupkey"] = $key;
+        file_put_contents("$backupKeysPath/secretsbackupkey", [
+            "secretsbackupkey" => $key,
+            "modified" => gmdate("Y-m-d\\TH:i:s\\Z")
+        ]);
+    }
+
+    echo json_encode($r);
+
+    exit();
+}
+
+
+/*
  * Default endpoint
  */
 http_response_code(404);
