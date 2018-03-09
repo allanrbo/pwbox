@@ -10,105 +10,53 @@ function getconfig() {
             echo json_encode(["status" => "error", "message" => "Internal error. Failed to load config."]);
             exit();
         }
+
+        ensurePermissions($config);
     }
 
-    ensurePermissions($config);
-
     return $config;
+}
+
+
+function getDataPath() {
+    return getconfig()["dataPath"];
 }
 
 
 function ensurePermissions($config) {
     $uid = posix_geteuid();
 
-    if (!file_exists($config["logPath"])) {
-        $r = @mkdir($config["logPath"], 0755, true);
-        if ($r === false) {
-            http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Internal error. Failed to create log directory."]);
-            exit();
-        }
-    }
-
-    if (fileowner($config["logPath"]) != $uid) {
+    if (!file_exists($config["dataPath"])) {
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Internal error. Not owner of log directory."]);
+        echo json_encode(["status" => "error", "message" => "Internal error. Data directory does not exist."]);
         exit();
     }
 
-    if (!file_exists($config["gpghome"])) {
-        $r = @mkdir($config["gpghome"], 0700, true);
-        if ($r === false) {
-            http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Internal error. Failed to create GPG home directory."]);
-            exit();
-        }
-    }
-
-    if (fileowner($config["gpghome"]) != $uid) {
+    if (fileowner($config["dataPath"]) != $uid) {
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Internal error. Not owner of GPG home directory."]);
+        echo json_encode(["status" => "error", "message" => "Internal error. Not owner of data directory."]);
         exit();
     }
 
-    if (!file_exists($config["secretsPath"])) {
-        $r = @mkdir($config["secretsPath"], 0700, true);
-        if ($r === false) {
-            http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Internal error. Failed to create secrets directory."]);
-            exit();
+    $dataSubDirs = [
+        "/logs",
+        "/gpghome",
+        "/secrets",
+        "/groups",
+        "/userprofiles",
+        "/backuptokens"
+    ];
+
+    foreach ($dataSubDirs as $dataSubDir) {
+        $path = $config["dataPath"] . $dataSubDir;
+
+        if (!file_exists($path)) {
+            $r = @mkdir($path, 0755, true);
+            if ($r === false) {
+                http_response_code(500);
+                echo json_encode(["status" => "error", "message" => "Internal error. Failed to create $path."]);
+                exit();
+            }
         }
-    }
-
-    if (fileowner($config["secretsPath"]) != $uid) {
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Internal error. Not owner of secrets directory."]);
-        exit();
-    }
-
-
-    if (!file_exists($config["groupsPath"])) {
-        $r = @mkdir($config["groupsPath"], 0700, true);
-        if ($r === false) {
-            http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Internal error. Failed to create groups directory."]);
-            exit();
-        }
-    }
-
-    if (fileowner($config["groupsPath"]) != $uid) {
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Internal error. Not owner of groups directory."]);
-        exit();
-    }
-
-    if (!file_exists($config["userProfilesPath"])) {
-        $r = @mkdir($config["userProfilesPath"], 0700, true);
-        if ($r === false) {
-            http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Internal error. Failed to create user profiles directory."]);
-            exit();
-        }
-    }
-
-    if (fileowner($config["userProfilesPath"]) != $uid) {
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Internal error. Not owner of user profiles directory."]);
-        exit();
-    }
-
-    if (!file_exists($config["backupTokensPath"])) {
-        $r = @mkdir($config["backupTokensPath"], 0700, true);
-        if ($r === false) {
-            http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Internal error. Failed to create backup tokens directory."]);
-            exit();
-        }
-    }
-
-    if (fileowner($config["backupTokensPath"]) != $uid) {
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Internal error. Not owner of backup tokens directory."]);
-        exit();
     }
 }

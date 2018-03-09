@@ -1,10 +1,5 @@
 {
     "uriPrefix": "/api",
-    "logPath": "/pwbox/data/logs",
-    "gpghome": "/pwbox/data/gpghome",
-    "secretsPath": "/pwbox/data/secrets",
-    "groupsPath": "/pwbox/data/groups",
-    "userProfilesPath": "/pwbox/data/userprofiles",
-    "backupTokensPath": "/pwbox/data/backuptokens",
+    "dataPath": "/pwbox/data",
     "tokenExpiryMinutes": 45
 }

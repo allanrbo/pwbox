@@ -31,7 +31,7 @@ if ($method == "POST" && $uri == "/authenticate") {
     $username = $data["username"];
     $password = $data["password"];
 
-    $userProfilesPath = getconfig()["userProfilesPath"];
+    $userProfilesPath = getDataPath() . "/userprofiles";
     $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
     $expectedOtp = "";
     if (isset($user["otpKey"])) {
@@ -104,7 +104,7 @@ if ($method == "POST" && $uri == "/user") {
     unset($data["password"]);
     $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
-    $userProfilesPath = getconfig()["userProfilesPath"];
+    $userProfilesPath = getDataPath() . "/userprofiles";
     file_put_contents("$userProfilesPath/$username", json_encode($data));
 
     echo json_encode(["status" => "ok"]);
@@ -138,7 +138,7 @@ if ($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
     unset($data["groupMemberships"]);
     $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
-    $userProfilesPath = getconfig()["userProfilesPath"];
+    $userProfilesPath = getDataPath() . "/userprofiles";
     file_put_contents("$userProfilesPath/$username", json_encode($data));
 
     echo json_encode(["status" => "ok"]);
@@ -186,7 +186,7 @@ if ($method == "POST" && $uri == "/changeotpkey") {
 
 
     $username = $authInfo["username"];
-    $userProfilesPath = getconfig()["userProfilesPath"];
+    $userProfilesPath = getDataPath() . "/userprofiles";
     $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
 
     $r = ["status" => "ok"];
@@ -245,7 +245,7 @@ if ($method == "GET" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
     }
 
     if (gpgUserExists($username)) {
-        $userProfilesPath = getconfig()["userProfilesPath"];
+        $userProfilesPath = getDataPath() . "/userprofiles";
         $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
         $user["username"] = $username;
         $user["groupMemberships"] = getGroupMemberships($username);
@@ -295,7 +295,7 @@ if ($method == "POST" && $uri == "/secret") {
 
     $secretId = uniqid();
     $data["id"] = $secretId;
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $recipients, json_encode($data));
     file_put_contents("$secretsPath/$secretId", $ciphertext);
 
@@ -315,7 +315,7 @@ if ($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     $secretId = $matches[1];
 
     // Ensure the secret exists already
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     if (!file_exists("$secretsPath/$secretId")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
@@ -349,7 +349,7 @@ if ($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
 
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $recipients, json_encode($data));
     file_put_contents("$secretsPath/$secretId", $ciphertext);
 
@@ -365,7 +365,7 @@ if ($method == "GET" && $uri == "/secret") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     echo json_encode(gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath));
     exit();
 }
@@ -382,7 +382,7 @@ if ($method == "GET" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     $secretId = $matches[1];
 
     // Ensure the secret exists
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     if (!file_exists("$secretsPath/$secretId")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
@@ -404,7 +404,7 @@ if ($method == "DELETE" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)
 
     $secretId = $matches[1];
 
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     if (!file_exists("$secretsPath/$secretId")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
@@ -440,10 +440,10 @@ if ($method == "POST" && $uri == "/group") {
 
     $groupName = $data["name"];
 
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
 
     // Ensure the group does not exists already
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
     if (file_exists("$groupsPath/$groupName")) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Group with this name already exists."]);
@@ -472,7 +472,7 @@ if ($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches))
     $groupName = $matches[1];
 
     // Ensure the group exists already
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
     if (!file_exists("$groupsPath/$groupName")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
@@ -502,7 +502,7 @@ if ($method == "GET" && $uri == "/group") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
 
     $groups = [];
     foreach (array_diff(scandir($groupsPath), [".", ".."]) as $key => $value) {
@@ -529,7 +529,7 @@ if ($method == "GET" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches))
     $groupName = $matches[1];
 
     // Ensure the group exists
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
     if (!file_exists("$groupsPath/$groupName")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
@@ -563,7 +563,7 @@ if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matche
         exit();
     }
 
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
     if (!file_exists("$groupsPath/$groupName")) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
@@ -590,7 +590,7 @@ if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
 
     header("Content-Type: text/csv");
 
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath);
 
     $out = fopen("php://output", "w");
@@ -624,7 +624,7 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath);
 
     $expectedColumns = ["pwboxId", "title", "username", "password", "notes", "owner", "groups"];
@@ -641,7 +641,7 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
 
     // Parse and verify all rows
     $users = gpgListAllUsers();
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
     $groups = array_diff(scandir($groupsPath), [".", ".."]);
     $toImport = [];
     while (!feof($in)) {
@@ -703,7 +703,7 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
     fclose($in);
 
     // Import rows
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     foreach ($toImport as $row) {
         $secret = [];
         $secretId = uniqid();
@@ -751,7 +751,7 @@ $matches = null;
 if ($method == "GET" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
     writelog("Requested $method on $uri");
 
-    $backupTokensPath = getconfig()["backupTokensPath"];
+    $backupTokensPath = getDataPath() . "/backuptokens";
     if (file_exists("$backupTokensPath/secretsbackup") && $_SERVER["HTTP_AUTHORIZATION"] === "Bearer " . json_decode(file_get_contents("$backupTokensPath/secretsbackup"), true)["token"]) {
         // Proceed to allow download of backup tar based on backup token
     } else {
@@ -763,7 +763,7 @@ if ($method == "GET" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
     header("Content-Transfer-Encoding: binary");
     header("Content-Disposition: attachment; filename=\"secrets.tar\"");
 
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
 
     $dirname = dirname($secretsPath);
     $basename  = basename($secretsPath);
@@ -801,7 +801,7 @@ if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
     }
 
     $users = gpgListAllUsers();
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
     $groups = array_diff(scandir($groupsPath), [".", ".."]);
 
     // Ensure able to read all given secrets, and that all referenced users and groups exist
@@ -863,7 +863,7 @@ if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
         file_put_contents($path, $ciphertext);
     }
 
-    $secretsPath = getconfig()["secretsPath"];
+    $secretsPath = getDataPath() . "/secrets";
     shell_exec("mv $tmpDir/secrets/* $secretsPath");
 
     exit();
@@ -877,7 +877,7 @@ $matches = null;
 if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
     writelog("Requested $method on $uri");
 
-    $backupTokensPath = getconfig()["backupTokensPath"];
+    $backupTokensPath = getDataPath() . "/backuptokens";
     if (file_exists("$backupTokensPath/usersbackup") && $_SERVER["HTTP_AUTHORIZATION"] === "Bearer " . json_decode(file_get_contents("$backupTokensPath/usersbackup"), true)["token"]) {
         // Proceed to allow download of backup tar based on backup token
     } else {
@@ -895,9 +895,9 @@ if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
         shell_exec("rm -fr $tmpDir");
     });
 
-    $gpgHomePath = getconfig()["gpghome"];
-    $groupsPath = getconfig()["groupsPath"];
-    $userProfilesPath = getconfig()["userProfilesPath"];
+    $gpgHomePath = getDataPath() . "/gpghome";
+    $groupsPath = getDataPath() . "/groups";
+    $userProfilesPath = getDataPath() . "/userprofiles";
 
     shell_exec("cp -r $gpgHomePath $tmpDir/gpghome");
     shell_exec("cp -r $groupsPath $tmpDir/groups");
@@ -950,9 +950,9 @@ if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
         exit();
     }
 
-    $gpgHomePath = getconfig()["gpghome"];
-    $groupsPath = getconfig()["groupsPath"];
-    $userProfilesPath = getconfig()["userProfilesPath"];
+    $gpgHomePath = getDataPath() . "/gpghome";
+    $groupsPath = getDataPath() . "/groups";
+    $userProfilesPath = getDataPath() . "/userprofiles";
 
     shell_exec("rm $gpgHomePath/* ; mv $tmpDir/gpghome/* $gpgHomePath");
     shell_exec("rm $groupsPath/* ; mv $tmpDir/groups/* $groupsPath");
@@ -972,7 +972,7 @@ if ($method == "GET" && $uri == "/backuptokens") {
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
-    $backupTokensPath = getconfig()["backupTokensPath"];
+    $backupTokensPath = getDataPath() . "/backuptokens";
 
     echo json_encode([
         "secretBackupTokenEnabled" => file_exists("$backupTokensPath/secretsbackup"),
@@ -994,7 +994,7 @@ if ($method == "POST" && ($uri == "/changebackuptoken/secrets" || $uri == "/chan
 
     $data = json_decode(file_get_contents("php://input"), true);
 
-    $backupTokensPath = getconfig()["backupTokensPath"];
+    $backupTokensPath = getDataPath() . "/backuptokens";
     $tokenFilePath = null;
     if ($uri == "/changebackuptoken/secrets") $tokenFilePath = "$backupTokensPath/secretsbackup";
     if ($uri == "/changebackuptoken/users") $tokenFilePath = "$backupTokensPath/usersbackup";

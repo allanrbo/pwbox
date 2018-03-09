@@ -1,7 +1,7 @@
 <?php
 
 function gpgInvoke($cmd, $stdin = "", $passphrase = null, $getStdErr = false, $acceptFailure = false) {
-    $gpghome = getconfig()["gpghome"];
+    $gpghome = getDataPath() . "/gpghome";
     $descriptorspec = [
         0 => ["pipe", "r"],
         1 => ["pipe", "w"],
@@ -149,7 +149,7 @@ function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
     }
 
     // Getconfig has validated this path. Further escape it for the Expect script.
-    $gpghome = getconfig()["gpghome"];
+    $gpghome = getDataPath() . "/gpghome";
     $gpghomeEscaped = str_replace("\"", "\\\"", $gpghome);
 
     $descriptorspec = [

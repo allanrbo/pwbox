@@ -12,7 +12,7 @@ function groupNameValid($groupName) {
 
 
 function getAllMembers($groupNames) {
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
 
     $members = [];
     foreach ($groupNames as $groupName) {
@@ -32,14 +32,14 @@ function getAllMembers($groupNames) {
 
 
 function isGroupMember($groupName, $username) {
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
     $group = json_decode(file_get_contents("$groupsPath/$groupName"), true);
     return in_array($username, $group["members"]);
 }
 
 
 function getGroupMemberships($username) {
-    $groupsPath = getconfig()["groupsPath"];
+    $groupsPath = getDataPath() . "/groups";
 
     $groups = [];
     foreach (array_diff(scandir($groupsPath), [".", ".."]) as $key => $value) {
@@ -55,8 +55,8 @@ function getGroupMemberships($username) {
 
 
 function reencryptSecretsUsingGroup($authInfo, $groupName, $removeGroup) {
-    $secretsPath = getconfig()["secretsPath"];
-    $groupsPath = getconfig()["groupsPath"];
+    $secretsPath = getDataPath() . "/secrets";
+    $groupsPath = getDataPath() . "/groups";
 
     $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath);
     foreach ($secrets as $secret) {

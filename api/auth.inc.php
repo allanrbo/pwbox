@@ -80,7 +80,7 @@ function extractTokenFromHeader() {
     }
 
     // Ensure user is not locked out
-    $userProfilesPath = getconfig()["userProfilesPath"];
+    $userProfilesPath = getDataPath() . "/userprofiles";
     $user = json_decode(file_get_contents("$userProfilesPath/$authInfo[username]"), true);
     if (isset($user["lockedOut"]) && $user["lockedOut"] === true) {
         http_response_code(401);
