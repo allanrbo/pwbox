@@ -4,7 +4,10 @@ var SecretList = {
     },
 
     view: function() {
-        var table = m("table.pure-table.pure-table-horizontal", [
+        var table = table = "No secrets found.";
+
+        if (Secret.list.length > 0) {
+            table = m("table.pure-table.pure-table-horizontal", [
                 m("thead", [
                     m("tr", [
                         m("th", "Title"),
@@ -15,14 +18,27 @@ var SecretList = {
                 m("tbody", Secret.list.map(function(row) {
                     return m("tr", { style: row.hidden ? "display: none" : "" }, [
                         m("td", m("a", {href: "/secrets/" + row.id, oncreate: m.route.link}, row.title)),
-                        m("td", row.username),
+                        m("td", [
+                            m("a[href=]", {
+                                onclick: function() {
+                                    var input = document.createElement("input");
+                                    input.style = "position: absolute; left: -1000px; top: -1000px";
+                                    document.body.appendChild(input);
+                                    input.value = row.username;
+                                    input.select();
+                                    document.execCommand("Copy");
+                                    input.remove();
+                                    return false;
+                                }
+                            }, m("span.copyicon")),
+                            row.username,
+
+
+                        ]),
                         m("td", row.modified),
                     ]);
                 }))
             ]);
-
-        if (Secret.list.length == 0) {
-            table = "No secrets found.";
         }
 
         var search = function() {
