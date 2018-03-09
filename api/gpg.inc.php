@@ -301,15 +301,34 @@ function gpgRecipientsFromCiphertext($ciphertext) {
 }
 
 
-function gpgListAllSecretFiles($username, $passphrase, $directory) {
-    $secretsFiles = array_diff(scandir($directory), [".", ".."]);
+function gpgListAllSecretFiles($username, $passphrase, $cache) {
+    $secretsPath = getDataPath() . "/secrets";
+    $secretsFiles = array_diff(scandir($secretsPath), [".", ".."]);
+
+    $cacheById = [];
+    foreach ($cache as $entry) {
+        $cacheById[$entry["id"]] = $entry;
+    }
 
     $r = [];
     foreach ($secretsFiles as $file) {
-        $ciphertext = file_get_contents("$directory/$file");
+        $filemtime = filemtime("$secretsPath/$file");
+
+        if (isset($cacheById[$file]) && isset($cacheById[$file]["filemtime"]) && $cacheById[$file]["filemtime"] >= $filemtime) {
+            $r[] = $cacheById[$file];
+            continue;
+        }
+
+        $ciphertext = file_get_contents("$secretsPath/$file");
 
         $recipients = gpgRecipientsFromCiphertext($ciphertext);
         if(!in_array($username, $recipients)) {
+            $r[] = [
+                "id" => $file,
+                "hasAccess" => false,
+                "filemtime" => $filemtime,
+            ];
+
             continue;
         }
 
@@ -338,10 +357,12 @@ function gpgListAllSecretFiles($username, $passphrase, $directory) {
 
         $r[] = [
             "id" => $file,
+            "hasAccess" => true,
             "title" => $title,
             "username" => $recusername,
             "groups" => $groups,
             "modified" => $modified,
+            "filemtime" => $filemtime,
         ];
     }
 

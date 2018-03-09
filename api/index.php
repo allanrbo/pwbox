@@ -184,7 +184,6 @@ if ($method == "POST" && $uri == "/changeotpkey") {
 
     $data = json_decode(file_get_contents("php://input"), true);
 
-
     $username = $authInfo["username"];
     $userProfilesPath = getDataPath() . "/userprofiles";
     $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
@@ -365,8 +364,28 @@ if ($method == "GET" && $uri == "/secret") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
-    $secretsPath = getDataPath() . "/secrets";
-    echo json_encode(gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath));
+    $username = $authInfo["username"];
+    $userProfilesPath = getDataPath() . "/userprofiles";
+    $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
+    $secretsListCache = isset($user["secretsListCache"]) ? json_decode(gpgDecryptSecret($authInfo["username"], $authInfo["password"], $user["secretsListCache"]), true) : [];
+
+    $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsListCache);
+
+    if ($secrets != $secretsListCache) {
+        $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], [$authInfo["username"]], json_encode($secrets));
+        $user["secretsListCache"] = $ciphertext;
+        file_put_contents("$userProfilesPath/$username", json_encode($user));
+    }
+
+    $secretsWithAccess = [];
+    foreach ($secrets as $secret) {
+        if ($secret["hasAccess"]) {
+            $secretsWithAccess[] = $secret;
+        }
+    }
+
+    echo json_encode($secretsWithAccess);
+
     exit();
 }
 
@@ -590,14 +609,14 @@ if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
 
     header("Content-Type: text/csv");
 
-    $secretsPath = getDataPath() . "/secrets";
-    $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath);
-
     $out = fopen("php://output", "w");
 
     fputcsv($out, ["pwboxId", "title", "username", "password", "notes", "owner", "groups"]);
+
+    $secretsPath = getDataPath() . "/secrets";
+    $secrets = array_diff(scandir($secretsPath), [".", ".."]);
     foreach ($secrets as $secret) {
-        $s = gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$secretsPath/$secret[id]");
+        $s = gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$secretsPath/$secret");
 
         $id = isset($s["id"]) ? $s["id"] : "";
         $title = isset($s["title"]) ? $s["title"] : "";
@@ -607,7 +626,7 @@ if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
         $owner = isset($s["owner"]) ? $s["owner"] : "";
         $groups = isset($s["groups"]) ? implode(",", $s["groups"]) : "";
 
-        fputcsv($out, [$secret["id"], $title, $username, $password, $notes, $owner, $groups]);
+        fputcsv($out, [$secret, $title, $username, $password, $notes, $owner, $groups]);
     };
 
     fclose($out);
@@ -623,9 +642,6 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
-
-    $secretsPath = getDataPath() . "/secrets";
-    $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath);
 
     $expectedColumns = ["pwboxId", "title", "username", "password", "notes", "owner", "groups"];
 

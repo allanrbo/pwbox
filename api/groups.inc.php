@@ -58,7 +58,13 @@ function reencryptSecretsUsingGroup($authInfo, $groupName, $removeGroup) {
     $secretsPath = getDataPath() . "/secrets";
     $groupsPath = getDataPath() . "/groups";
 
-    $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsPath);
+    $username = $authInfo["username"];
+    $userProfilesPath = getDataPath() . "/userprofiles";
+    $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
+    $secretsListCache = isset($user["secretsListCache"]) ? json_decode(gpgDecryptSecret($authInfo["username"], $authInfo["password"], $user["secretsListCache"]), true) : [];
+
+    $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsListCache);
+
     foreach ($secrets as $secret) {
         if ($secret["groups"] && in_array($groupName, $secret["groups"])) {
             $secretId = $secret["id"];
@@ -87,6 +93,7 @@ function reencryptSecretsUsingGroup($authInfo, $groupName, $removeGroup) {
         }
     }
 }
+
 
 function requireAdminGroup($authInfo) {
     if(!isGroupMember("Administrators", $authInfo["username"])) {
