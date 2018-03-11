@@ -40,6 +40,25 @@ var SecretList = {
             input.remove();
         }
 
+
+        function formatDate(date) {
+            if (typeof(date) === "string") {
+                date = new Date(date);
+            }
+
+            function pad(n) {
+                var str = "" + n;
+                var pad = "00";
+                return pad.substring(0, pad.length - str.length) + str;
+            }
+
+            return date.getFullYear()
+                + "-" + pad(date.getMonth())
+                + "-" + pad(date.getDate())
+                + " " + pad(date.getHours())
+                + ":" + pad(date.getMinutes());
+        }
+
         var table = table = "No secrets found.";
 
         if (Secret.list.length > 0) {
@@ -49,7 +68,7 @@ var SecretList = {
                         m("th", {style: ""}, "Title"),
                         m("th", {style: ""}, "Username"),
                         m("th", {style: "width: 5em;"}, "Password"),
-                        m("th", {style: "width: 12em;"}, "Modified"),
+                        m("th", {style: "width: 8em;"}, "Modified"),
                     ])
                 ]),
                 m("tbody", Secret.list.map(function(row) {
@@ -84,7 +103,7 @@ var SecretList = {
                             m("span.copyicon")),
                             " *****",
                         ]),
-                        m("td", row.modified),
+                        m("td", formatDate(row.modified)),
                     ]);
                 }))
             ]);
