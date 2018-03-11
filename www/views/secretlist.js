@@ -43,13 +43,13 @@ var SecretList = {
         var table = table = "No secrets found.";
 
         if (Secret.list.length > 0) {
-            table = m("table.pure-table.pure-table-horizontal", [
+            table = m("table.pure-table.pure-table-horizontal.secretslist", [
                 m("thead", [
                     m("tr", [
-                        m("th", "Title"),
-                        m("th", "Username"),
-                        m("th", "Password"),
-                        m("th", "Modified"),
+                        m("th", {style: ""}, "Title"),
+                        m("th", {style: ""}, "Username"),
+                        m("th", {style: "width: 5em;"}, "Password"),
+                        m("th", {style: "width: 12em;"}, "Modified"),
                     ])
                 ]),
                 m("tbody", Secret.list.map(function(row) {
@@ -82,7 +82,7 @@ var SecretList = {
                                 }
                             },
                             m("span.copyicon")),
-                            " *******",
+                            " *****",
                         ]),
                         m("td", row.modified),
                     ]);

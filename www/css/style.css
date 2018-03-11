@@ -71,3 +71,14 @@ a {
     width: 1em;
     height: 1em;
 }
+
+table.secretslist {
+    table-layout: fixed;
+    width: 100%;
+}
+
+table.secretslist td, table.secretslist th {
+    overflow: hidden;
+    white-space:nowrap;
+    text-overflow: ellipsis;
+}
