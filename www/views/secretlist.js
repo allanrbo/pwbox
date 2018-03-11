@@ -4,6 +4,42 @@ var SecretList = {
     },
 
     view: function() {
+        var showCopiedToClipboardNotification = function(x, y) {
+            var notification = document.createElement("div");
+            notification.style =
+                "position: fixed;"
+                + "left: " + x + "px;"
+                + "top: " + y + "px;"
+                + "background-color: white;"
+                + "padding: 2px;"
+                + "border: 1px solid gray;";
+            notification.innerText = "Copied to clipboard";
+            document.body.appendChild(notification);
+
+            setTimeout(function() {
+                notification.style =
+                    notification.getAttribute("style")
+                    + "visibility: hidden;"
+                    + "opacity: 0;"
+                    +" transition: visibility 0s 0.5s, opacity 0.5s linear;"
+
+                setTimeout(function() {
+                    notification.remove();
+                }, 500);
+            }, 1500);
+        }
+
+        var copyToClipboard = function(value) {
+            var input = document.createElement("input");
+            input.style = "position: fixed; left: -1000px; top: -1000px";
+            document.body.appendChild(input);
+            input.value = value;
+            input.focus();
+            input.select();
+            document.execCommand("Copy");
+            input.remove();
+        }
+
         var table = table = "No secrets found.";
 
         if (Secret.list.length > 0) {
@@ -12,6 +48,7 @@ var SecretList = {
                     m("tr", [
                         m("th", "Title"),
                         m("th", "Username"),
+                        m("th", "Password"),
                         m("th", "Modified"),
                     ])
                 ]),
@@ -20,20 +57,32 @@ var SecretList = {
                         m("td", m("a", {href: "/secrets/" + row.id, oncreate: m.route.link}, row.title)),
                         m("td", [
                             m("a[href=]", {
-                                onclick: function() {
-                                    var input = document.createElement("input");
-                                    input.style = "position: absolute; left: -1000px; top: -1000px";
-                                    document.body.appendChild(input);
-                                    input.value = row.username;
-                                    input.select();
-                                    document.execCommand("Copy");
-                                    input.remove();
+                                onclick: function(e) {
+                                    copyToClipboard(row.username);
+                                    showCopiedToClipboardNotification(
+                                        e.clientX,
+                                        e.clientY);
                                     return false;
                                 }
                             }, m("span.copyicon")),
+                            " ",
                             row.username,
+                        ]),
+                        m("td", [
+                            m("a[href=]", {
+                                onclick: function(e) {
+                                    Secret.loadSync(row.id).then(function() {
+                                        copyToClipboard(Secret.current.password);
+                                    showCopiedToClipboardNotification(
+                                        e.clientX,
+                                        e.clientY);
+                                    });
 
-
+                                    return false;
+                                }
+                            },
+                            m("span.copyicon")),
+                            " *******",
                         ]),
                         m("td", row.modified),
                     ]);
