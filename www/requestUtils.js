@@ -13,6 +13,11 @@ var xhrExtractBinary = function(xhr) {
         return xhr.response;
     }
 
+    if (xhr.status == 0) {
+        // Probably user interrupted the request
+        throw "";
+    }
+
     var responseText = (new TextDecoder()).decode(xhr.response);
     var error = new Error(responseText !== "" ? responseText : "Unknown error");
     try {

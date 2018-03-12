@@ -3,24 +3,39 @@ var BackupRestorePage = {
         BackupRestore.loadBackupTokenStatus();
         BackupRestore.secretsBackupToken = {};
         BackupRestore.usersBackupToken = {};
+
+        BackupRestorePage.showspinner = false;
     },
 
     view: function() {
 
         var makeFileDownloader = function(downloadFunc, outfilename, mimetype) {
             return function() {
-                downloadFunc().then(function(result) {
-                    var blob = new Blob([result], {type: mimetype});
-                    var a = document.createElement("a");
-                    a.style = "display: none";
-                    document.body.appendChild(a);
-                    var url = window.URL.createObjectURL(blob);
-                    a.href = url;
-                    a.download = outfilename;
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    a.remove();
-                });
+                BackupRestorePage.showspinner = true;
+
+                downloadFunc()
+                    .catch(function(e) {
+                        BackupRestorePage.showspinner = false;
+                        throw e;
+                    })
+                    .then(function(result) {
+                        var blob = new Blob([result], {type: mimetype});
+                        if(window.navigator.msSaveOrOpenBlob) {
+                            window.navigator.msSaveOrOpenBlob(blob, outfilename);
+                        } else {
+                            var a = document.createElement("a");
+                            a.style = "display: none";
+                            document.body.appendChild(a);
+                            var url = window.URL.createObjectURL(blob);
+                            a.href = url;
+                            a.download = outfilename;
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            a.remove();
+                        }
+
+                        BackupRestorePage.showspinner = false;
+                    });
 
                 return false;
             }
@@ -34,9 +49,17 @@ var BackupRestorePage = {
                 input.onchange = function(inputEvent) {
                     var reader = new FileReader();
                     reader.onload = function (readerEvent) {
-                        uploaderFunc(readerEvent.target.result).then(function() {
-                            alert(successMsg);
-                        });
+                        BackupRestorePage.showspinner = true;
+                        m.redraw();
+                        uploaderFunc(readerEvent.target.result)
+                            .catch(function(e) {
+                                BackupRestorePage.showspinner = false;
+                                throw e;
+                            })
+                            .then(function() {
+                                BackupRestorePage.showspinner = false;
+                                alert(successMsg);
+                            });
                     }
 
                     reader.readAsArrayBuffer(inputEvent.target.files[0]);
@@ -95,8 +118,9 @@ var BackupRestorePage = {
             );
         }
 
-
         return [
+            BackupRestorePage.showspinner ? m(".spinneroverlay", m(".spinner")) : null,
+
             m("h2.content-subhead", "Backup and restore"),
 
             m("h3.content-subhead", "Plain text CSV file"),
@@ -158,7 +182,6 @@ var BackupRestorePage = {
                 function(value) { BackupRestore.usersBackupToken = value; },
                 "users.tar"
             ),
-
         ];
     }
 }
