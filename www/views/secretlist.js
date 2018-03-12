@@ -131,9 +131,16 @@ var SecretList = {
                     e.preventDefault();
                     search();
                 }}, [
-                m("input#searchbox[type=text][placeholder=Search][autofocus]", { oncreate: function(vnode) { setTimeout(function() { vnode.dom.focus(); }, 0); } }),
-                " ",
-                m("button[type=submit].pure-button", { onclick: search }, "Search")
+                    m("input#searchbox[type=text][placeholder=Search][autofocus]", {
+                        oncreate: function(vnode) {
+                            setTimeout(function() {
+                                vnode.dom.focus();
+                            }, 0);
+                        },
+                        oninput: function() {
+                            search();
+                        }
+                    })
             ]),
             m("br"),
             table
