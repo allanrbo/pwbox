@@ -1,8 +1,10 @@
 var Secret = {
     list: [],
+    listLoaded: false,
     current: {},
 
     loadList: function() {
+        Secret.listLoaded = false;
         return m.request({
             method: "GET",
             url: "/api/secret",
@@ -10,6 +12,11 @@ var Secret = {
         })
         .then(function(result) {
             Secret.list = result;
+            Secret.listLoaded = true;
+        })
+        .catch(function(e) {
+            Secret.listLoaded = true;
+            throw e;
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);

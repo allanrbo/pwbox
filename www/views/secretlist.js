@@ -40,7 +40,6 @@ var SecretList = {
             input.remove();
         }
 
-
         function formatDate(date) {
             if (typeof(date) === "string") {
                 date = new Date(date);
@@ -59,7 +58,7 @@ var SecretList = {
                 + ":" + pad(date.getMinutes());
         }
 
-        var table = table = "No secrets found.";
+        var table = Secret.listLoaded ? "No secrets found." : "Loading...";
 
         if (Secret.list.length > 0) {
             table = m("table.pure-table.pure-table-horizontal.secretslist", [
