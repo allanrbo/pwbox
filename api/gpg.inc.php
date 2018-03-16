@@ -1,6 +1,25 @@
 <?php
 
+function gpgEnsureAgentStarted() {
+    static $alreadyChecked = false;
+
+    if ($alreadyChecked) {
+        return;
+    }
+
+    $user = get_current_user();
+    $procs = shell_exec("ps aux");
+    if(preg_match("/^$user .*?gpg-agent/m", $procs)) {
+        return;
+    }
+
+    $gpghome = getDataPath() . "/gpghome";
+    shell_exec("gpg-agent --homedir $gpghome --use-standard-socket --daemon --max-cache-ttl 0");
+}
+
 function gpgInvoke($cmd, $stdin = "", $passphrase = null, $getStdErr = false, $acceptFailure = false) {
+    gpgEnsureAgentStarted();
+
     $gpghome = getDataPath() . "/gpghome";
     $descriptorspec = [
         0 => ["pipe", "r"],
@@ -108,15 +127,19 @@ function gpgCreateUser($username, $passphrase) {
         Subkey-Type: RSA
         Name-Real: $username
         Expire-Date: 0
-        %no-protection
     ";
 
-    gpgInvoke("--gen-key", $batch);
-
-    // TODO protect against empty password logins in case this fails...
     if ($passphrase) {
-        gpgChangePassphrase($username, "", $passphrase);
+        $batch .= "
+            Passphrase: $passphrase
+        ";
+    } else {
+        $batch .= "
+            %no-protection
+        ";
     }
+
+    gpgInvoke("--gen-key", $batch);
 }
 
 
@@ -160,12 +183,6 @@ function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
     // Escape for the Expect-script
     $oldPassphraseEscaped = str_replace("\"", "\\\"", $oldPassphrase);
     $newPassphraseEscaped = str_replace("\"", "\\\"", $newPassphrase);
-
-    if ($oldPassphraseEscaped == "") {
-        // If there was previously an empty password, GPG 2 allows any value as old password
-        // Pass a dummy value for the expect script to work reliably
-        $oldPassphraseEscaped = "dummyvalue";
-    }
 
     $stdin = "
         set timeout 10

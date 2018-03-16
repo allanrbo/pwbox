@@ -40,7 +40,7 @@ function verifyCredentials($username, $password) {
     try {
         gpgEncryptSecret($username, $password, [$username], "dummy");
     } catch (Exception $e) {
-        if (strpos($e->getMessage(), "bad passphrase") !== false) {
+        if (stripos($e->getMessage(), "bad passphrase") !== false) {
             return false;
         }
         throw $e;
