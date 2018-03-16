@@ -161,6 +161,12 @@ function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
     $oldPassphraseEscaped = str_replace("\"", "\\\"", $oldPassphrase);
     $newPassphraseEscaped = str_replace("\"", "\\\"", $newPassphrase);
 
+    if ($oldPassphraseEscaped == "") {
+        // If there was previously an empty password, GPG 2 allows any value as old password
+        // Pass a dummy value for the expect script to work reliably
+        $oldPassphraseEscaped = "dummyvalue";
+    }
+
     $stdin = "
         set timeout 10
 
