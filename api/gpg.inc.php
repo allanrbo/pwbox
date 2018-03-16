@@ -15,7 +15,7 @@ function gpgInvoke($cmd, $stdin = "", $passphrase = null, $getStdErr = false, $a
     }
 
     $pipes = null;
-    $fullCmd = "/usr/bin/gpg --home $gpghome --batch $passPhraseFdParam --no-tty $cmd";
+    $fullCmd = "/usr/bin/gpg --home $gpghome --batch --pinentry-mode loopback $passPhraseFdParam  $cmd";
     writelog("Invoking GPG: " . $fullCmd);
     $process = proc_open($fullCmd, $descriptorspec, $pipes);
 
@@ -70,26 +70,16 @@ function gpgPassphraseValid($passphrase) {
 
 function gpgSystemUserExists() {
     $r = gpgInvoke("--list-sigs");
-    $matches = null;
-    preg_match_all("/uid +(.+)/", $r, $matches);
-    $users = $matches[1];
-    return in_array("system", $users);
+    return preg_match("/uid .*?system$/m", $r);
 }
 
 
-function gpgListAllUsers($includeSystem = false) {
+function gpgListAllUsers() {
     $r = gpgInvoke("--list-sigs");
     $matches = null;
-    preg_match_all("/uid +(.+)/", $r, $matches);
+    preg_match_all("/uid .*?([a-zA-Z0-9]+)$/m", $r, $matches);
     $users = $matches[1];
-
-    $usersWithoutSystem = [];
-    foreach ($users as $user) {
-        if($user == "system") continue;
-        $usersWithoutSystem[] = $user;
-    }
-
-    return $usersWithoutSystem;
+    return array_diff($users, ["system"]);
 }
 
 
@@ -118,15 +108,15 @@ function gpgCreateUser($username, $passphrase) {
         Subkey-Type: RSA
         Name-Real: $username
         Expire-Date: 0
+        %no-protection
     ";
 
-    if($passphrase) {
-        $batch .= "
-            Passphrase: $passphrase
-        ";
-    }
-
     gpgInvoke("--gen-key", $batch);
+
+    // TODO protect against empty password logins in case this fails...
+    if ($passphrase) {
+        gpgChangePassphrase($username, "", $passphrase);
+    }
 }
 
 
@@ -171,21 +161,20 @@ function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
     $oldPassphraseEscaped = str_replace("\"", "\\\"", $oldPassphrase);
     $newPassphraseEscaped = str_replace("\"", "\\\"", $newPassphrase);
 
+    $hasOldPassphrase = $oldPassphraseEscaped != "" ? 1 : 0;
+
     $stdin = "
         set timeout 10
 
-        spawn /usr/bin/gpg --home \"$gpghomeEscaped\" --edit-key \"$username\" passwd
+        spawn /usr/bin/gpg --home \"$gpghomeEscaped\" --pinentry-mode loopback --edit-key \"$username\" passwd
 
-        expect {
-            \"Enter passphrase:\" { }
-            timeout { exit 100 }
-        }
+        if { $hasOldPassphrase == 1 } {
+            expect {
+                \"Enter passphrase:\" { }
+                timeout { exit 100 }
+            }
 
-        send \"$oldPassphraseEscaped\\r\"
-
-        expect {
-            \"Enter the new passphrase for this secret key.\" { }
-            timeout { exit 101 }
+            send \"$oldPassphraseEscaped\\r\"
         }
 
         expect {
@@ -195,12 +184,14 @@ function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
 
         send \"$newPassphraseEscaped\\r\"
 
-        expect {
-            \"Repeat passphrase:\" { }
-            timeout { exit 103 }
-        }
+        if { $hasOldPassphrase == 0 } {
+            expect {
+                \"Enter passphrase:\" { }
+                timeout { exit 103 }
+            }
 
-        send \"$newPassphraseEscaped\\r\"
+            send \"$newPassphraseEscaped\\r\"
+        }
 
         expect {
             \"gpg>\" { }

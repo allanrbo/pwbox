@@ -51,7 +51,7 @@ function ensurePermissions($config) {
         $path = $config["dataPath"] . $dataSubDir;
 
         if (!file_exists($path)) {
-            $r = @mkdir($path, 0755, true);
+            $r = @mkdir($path, 0700, true);
             if ($r === false) {
                 http_response_code(500);
                 echo json_encode(["status" => "error", "message" => "Internal error. Failed to create $path."]);

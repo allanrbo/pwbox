@@ -23,7 +23,7 @@ function generateToken($username, $password) {
         "password" => $password,
         "expire" => getUtcTime() + getconfig()["tokenExpiryMinutes"]*60,
     ];
-    $tokenRaw = gpgEncryptSecret($username, $password, ["system"], json_encode($tokenContent), false);
+    $tokenRaw = gpgEncryptSecret($username, $password, ["system"], json_encode($tokenContent));
     return base64_encode($tokenRaw);
 }
 
