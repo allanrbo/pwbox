@@ -161,21 +161,17 @@ function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
     $oldPassphraseEscaped = str_replace("\"", "\\\"", $oldPassphrase);
     $newPassphraseEscaped = str_replace("\"", "\\\"", $newPassphrase);
 
-    $hasOldPassphrase = $oldPassphraseEscaped != "" ? 1 : 0;
-
     $stdin = "
         set timeout 10
 
         spawn /usr/bin/gpg --home \"$gpghomeEscaped\" --pinentry-mode loopback --edit-key \"$username\" passwd
 
-        if { $hasOldPassphrase == 1 } {
-            expect {
-                \"Enter passphrase:\" { }
-                timeout { exit 100 }
-            }
-
-            send \"$oldPassphraseEscaped\\r\"
+        expect {
+            \"Enter passphrase:\" { }
+            timeout { exit 100 }
         }
+
+        send \"$oldPassphraseEscaped\\r\"
 
         expect {
             \"Enter passphrase:\" { }
@@ -183,15 +179,6 @@ function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
         }
 
         send \"$newPassphraseEscaped\\r\"
-
-        if { $hasOldPassphrase == 0 } {
-            expect {
-                \"Enter passphrase:\" { }
-                timeout { exit 103 }
-            }
-
-            send \"$newPassphraseEscaped\\r\"
-        }
 
         expect {
             \"gpg>\" { }
