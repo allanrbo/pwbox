@@ -1,4 +1,5 @@
 {
+    "gpgBinary": "/usr/bin/gpg1",
     "uriPrefix": "/api",
     "dataPath": "/pwbox/data",
     "tokenExpiryMinutes": 45

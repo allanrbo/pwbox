@@ -14,8 +14,10 @@ function gpgInvoke($cmd, $stdin = "", $passphrase = null, $getStdErr = false, $a
         $passPhraseFdParam = "--passphrase-fd 3";
     }
 
+    $gpgBinary = getconfig()["gpgBinary"];
+
     $pipes = null;
-    $fullCmd = "/usr/bin/gpg --home $gpghome --batch $passPhraseFdParam --no-tty $cmd";
+    $fullCmd = "$gpgBinary --home $gpghome --batch $passPhraseFdParam --no-tty $cmd";
     writelog("Invoking GPG: " . $fullCmd);
     $process = proc_open($fullCmd, $descriptorspec, $pipes);
 
@@ -167,6 +169,8 @@ function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
         throw new Exception("Could not start expect process");
     }
 
+    $gpgBinary = getconfig()["gpgBinary"];
+
     // Escape for the Expect-script
     $oldPassphraseEscaped = str_replace("\"", "\\\"", $oldPassphrase);
     $newPassphraseEscaped = str_replace("\"", "\\\"", $newPassphrase);
@@ -174,7 +178,7 @@ function gpgChangePassphrase($username, $oldPassphrase, $newPassphrase) {
     $stdin = "
         set timeout 10
 
-        spawn /usr/bin/gpg --home \"$gpghomeEscaped\" --edit-key \"$username\" passwd
+        spawn $gpgBinary --home \"$gpghomeEscaped\" --edit-key \"$username\" passwd
 
         expect {
             \"Enter passphrase:\" { }
