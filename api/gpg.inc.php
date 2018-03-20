@@ -72,10 +72,7 @@ function gpgPassphraseValid($passphrase) {
 
 function gpgSystemUserExists() {
     $r = gpgInvoke("--list-sigs");
-    $matches = null;
-    preg_match_all("/uid +(.+)/", $r, $matches);
-    $users = $matches[1];
-    return in_array("system", $users);
+    return preg_match("/uid .*?system$/m", $r);
 }
 
 
@@ -85,13 +82,7 @@ function gpgListAllUsers($includeSystem = false) {
     preg_match_all("/uid +(.+)/", $r, $matches);
     $users = $matches[1];
 
-    $usersWithoutSystem = [];
-    foreach ($users as $user) {
-        if($user == "system") continue;
-        $usersWithoutSystem[] = $user;
-    }
-
-    return $usersWithoutSystem;
+    return array_diff($users, ["system"]);
 }
 
 
@@ -122,7 +113,7 @@ function gpgCreateUser($username, $passphrase) {
         Expire-Date: 0
     ";
 
-    if($passphrase) {
+    if ($passphrase) {
         $batch .= "
             Passphrase: $passphrase
         ";
