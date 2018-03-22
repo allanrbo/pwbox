@@ -18,6 +18,10 @@ var LoginForm = {
                         Session.current.loggingIn = true;
                     }
                 },
+
+                // Unused dummy decoy password field, to prevent browser auto save
+                m("input#password[type=password]", {style: "display: none;", tabindex: -1}),
+
                 m("fieldset", [
                     m(".pure-control-group", [
                         m("label[for=username]", "Username"),
