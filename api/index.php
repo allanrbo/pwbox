@@ -66,7 +66,7 @@ if ($method == "POST" && $uri == "/authenticate") {
     }
 
     $token = generateToken($username, $password);
-    echo json_encode(["token" => $token]);
+    echo json_encode(["token" => $token, "tokenExpiryMinutes" => getconfig()["tokenExpiryMinutes"]]);
     exit();
 }
 

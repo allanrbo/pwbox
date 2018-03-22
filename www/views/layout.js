@@ -15,6 +15,7 @@ var Layout = {
                     m("li.pure-menu-item", {class: area == "admin" ? "pure-menu-selected" : ""}, m("a.pure-menu-link[href=/admin]", {oncreate: m.route.link}, "Admin")),
                     m("li.pure-menu-item.menu-item-divided"),
                     m("li.pure-menu-item", m("a.pure-menu-link[href=/logout]", {oncreate: m.route.link}, "Log out")),
+                    m("li.pure-menu-item", m("#sessionTimeRemaining.non-link-item", "")),
                 ])
             ])
         ]);
@@ -45,6 +46,8 @@ var Layout = {
                 toggleMenu(e);
             }
         };
+
+        Session.setupLogoutOnSessionExpire();
 
         return layout;
     }

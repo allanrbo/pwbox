@@ -21,7 +21,8 @@ function generateToken($username, $password) {
     $tokenContent = [
         "username" => $username,
         "password" => $password,
-        "expire" => getUtcTime() + getconfig()["tokenExpiryMinutes"]*60,
+        "expiretime" => getUtcTime() + getconfig()["tokenExpiryMinutes"]*60,
+        "starttime" => getUtcTime(),
     ];
     $tokenRaw = gpgEncryptSecret($username, $password, ["system"], json_encode($tokenContent), false);
     return base64_encode($tokenRaw);
@@ -73,7 +74,7 @@ function extractTokenFromHeader() {
 
     // Ensure token is not expired
     $authInfo = json_decode($json, true);
-    if ($authInfo["expire"] < getUtcTime()) {
+    if ($authInfo["expiretime"] < getUtcTime() || $authInfo["starttime"] > getUtcTime()) {
         http_response_code(401);
         echo json_encode(["status" => "unauthorized", "message" => "Expired auth token."]);
         exit();
