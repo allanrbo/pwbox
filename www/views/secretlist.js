@@ -1,7 +1,7 @@
 var SecretList = {
     oninit: function() {
+        Secret.list = [];
         Secret.loadList();
-
         SecretList.currentlyLoadingSecretId = null;
     },
 

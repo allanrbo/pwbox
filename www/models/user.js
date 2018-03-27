@@ -1,8 +1,10 @@
 var User = {
     list: [],
+    listLoaded: false,
     current: {},
 
     loadList: function() {
+        User.listLoaded = false;
         return m.request({
             method: "GET",
             url: "/api/user",
@@ -10,6 +12,7 @@ var User = {
         })
         .then(function(result) {
             User.list = result;
+            User.listLoaded = true;
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);

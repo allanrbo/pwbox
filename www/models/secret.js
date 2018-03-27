@@ -2,6 +2,7 @@ var Secret = {
     list: [],
     listLoaded: false,
     current: {},
+    currentLoaded: false,
 
     loadList: function() {
         Secret.listLoaded = false;
@@ -23,6 +24,7 @@ var Secret = {
     },
 
     load: function(id) {
+        Secret.currentLoaded = false;
         return m.request({
             method: "GET",
             url: "/api/secret/" + id,
@@ -30,6 +32,7 @@ var Secret = {
         })
         .then(function(result) {
             Secret.current = result;
+            Secret.currentLoaded = true;
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);

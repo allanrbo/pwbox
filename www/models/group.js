@@ -1,8 +1,10 @@
 var Group = {
     list: [],
+    listLoaded: false,
     current: {},
 
     loadList: function() {
+        Group.listLoaded = false;
         return m.request({
             method: "GET",
             url: "/api/group",
@@ -10,6 +12,7 @@ var Group = {
         })
         .then(function(result) {
             Group.list = result;
+            Group.listLoaded = true;
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
