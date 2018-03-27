@@ -35,20 +35,6 @@ var Secret = {
         .catch(alertErrorMessage);
     },
 
-    loadSync: function(id) {
-        return m.request({
-            method: "GET",
-            url: "/api/secret/" + id,
-            config: xhrConfig,
-            async: false,
-        })
-        .then(function(result) {
-            Secret.current = result;
-        })
-        .catch(handleUnauthorized)
-        .catch(alertErrorMessage);
-    },
-
     save: function() {
         var method = "POST";
         var url = "/api/secret";

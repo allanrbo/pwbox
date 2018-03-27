@@ -1,6 +1,8 @@
 var SecretList = {
     oninit: function() {
         Secret.loadList();
+
+        SecretList.currentlyLoadingSecretId = null;
     },
 
     view: function() {
@@ -27,7 +29,7 @@ var SecretList = {
                     notification.remove();
                 }, 500);
             }, 1500);
-        }
+        };
 
         var copyToClipboard = function(value) {
             var input = document.createElement("input");
@@ -38,9 +40,9 @@ var SecretList = {
             input.select();
             document.execCommand("Copy");
             input.remove();
-        }
+        };
 
-        function formatDate(date) {
+        var formatDate = function(date) {
             if (typeof(date) === "string") {
                 date = new Date(date);
             }
@@ -56,6 +58,45 @@ var SecretList = {
                 + "-" + pad(date.getDate())
                 + " " + pad(date.getHours())
                 + ":" + pad(date.getMinutes());
+        };
+
+        var createCopyLink = function(rowId) {
+            if (rowId == SecretList.currentlyLoadingSecretId) {
+                return m("span.spinnericon");
+            }
+
+            if (rowId == Secret.current.id) {
+                console.log(rowId);
+                if (Secret.current.password) {
+                    return [
+                        m("a[href=]", {
+                            onclick: function(e) {
+                                copyToClipboard(Secret.current.password);
+                                showCopiedToClipboardNotification(
+                                    e.clientX,
+                                    e.clientY);
+
+                                return false;
+                            }
+                        }, m("span.copyicon")),
+                        " *****"
+                    ];
+                } else {
+                    return "None"
+                }
+            }
+
+            return m("a[href=]", {
+                onclick: function(e) {
+                    SecretList.currentlyLoadingSecretId = rowId;
+
+                    Secret.load(rowId).then(function() {
+                        SecretList.currentlyLoadingSecretId = null;
+                    });
+
+                    return false;
+                }
+            }, m("span.geticon"));
         }
 
         var table = Secret.listLoaded ? "No secrets found." : "Loading...";
@@ -86,22 +127,7 @@ var SecretList = {
                             " ",
                             row.username,
                         ]),
-                        m("td", [
-                            m("a[href=]", {
-                                onclick: function(e) {
-                                    Secret.loadSync(row.id).then(function() {
-                                        copyToClipboard(Secret.current.password);
-                                    showCopiedToClipboardNotification(
-                                        e.clientX,
-                                        e.clientY);
-                                    });
-
-                                    return false;
-                                }
-                            },
-                            m("span.copyicon")),
-                            " *****",
-                        ]),
+                        m("td", createCopyLink(row.id)),
                         m("td", formatDate(row.modified)),
                     ]);
                 }))
