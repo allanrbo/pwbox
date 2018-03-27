@@ -9,6 +9,10 @@ var SecretForm = {
         User.loadList();
     },
 
+    onremove: function(vnode) {
+        Secret.current = {};
+    },
+
     view: function(vnode) {
         var loading = false;
         if (vnode.attrs.key != "new") {
