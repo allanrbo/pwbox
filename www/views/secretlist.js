@@ -109,13 +109,15 @@ var SecretList = {
         }
 
         var search = function() {
-            var term = document.getElementById("searchbox").value;
+            var term = document.getElementById("searchbox").value.toLowerCase();
 
             for (var i = 0; i < Secret.list.length; i++) {
                 var row = Secret.list[i];
-                row.hidden = false;
-                if (row.title.indexOf(term) == -1) {
-                    row.hidden = true;
+                row.hidden = true;
+                var inTitle = row.title.toLowerCase().indexOf(term) != -1;
+                var inUsername = row.username.toLowerCase().indexOf(term) != -1;
+                if (inTitle || inUsername) {
+                    row.hidden = false;
                 }
             }
         }
