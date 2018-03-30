@@ -1,4 +1,6 @@
 var SecretList = {
+    secretsCount: null,
+
     oninit: function() {
         Secret.list = [];
         Secret.loadList();
@@ -102,41 +104,50 @@ var SecretList = {
         var table = Secret.listLoaded ? "No secrets found." : "Loading...";
 
         if (Secret.list.length > 0) {
-            table = m("table.pure-table.pure-table-horizontal.secretslist", [
-                m("thead", [
-                    m("tr", [
-                        m("th", {style: ""}, "Title"),
-                        m("th", {style: ""}, "Username"),
-                        m("th", {style: "width: 5em;"}, "Password"),
-                        m("th", {style: "width: 8em;"}, "Modified"),
-                    ])
+            if (SecretList.secretsCount === null) {
+                SecretList.secretsCount = Secret.list.length;
+            }
+
+
+            table = [
+                m("table.pure-table.pure-table-horizontal.secretslist", [
+                    m("thead", [
+                        m("tr", [
+                            m("th", {style: ""}, "Title"),
+                            m("th", {style: ""}, "Username"),
+                            m("th", {style: "width: 5em;"}, "Password"),
+                            m("th", {style: "width: 8em;"}, "Modified"),
+                        ])
+                    ]),
+                    m("tbody", Secret.list.map(function(row) {
+                        return m("tr", { style: row.hidden ? "display: none" : "" }, [
+                            m("td", m("a", {href: "/secrets/" + row.id, oncreate: m.route.link}, row.title)),
+                            m("td", [
+                                m("a[href=]", {
+                                    onclick: function(e) {
+                                        copyToClipboard(row.username);
+                                        showCopiedToClipboardNotification(
+                                            e.clientX,
+                                            e.clientY);
+                                        return false;
+                                    }
+                                }, m("span.copyicon")),
+                                " ",
+                                row.username,
+                            ]),
+                            m("td", createCopyLink(row.id)),
+                            m("td", formatDate(row.modified)),
+                        ]);
+                    }))
                 ]),
-                m("tbody", Secret.list.map(function(row) {
-                    return m("tr", { style: row.hidden ? "display: none" : "" }, [
-                        m("td", m("a", {href: "/secrets/" + row.id, oncreate: m.route.link}, row.title)),
-                        m("td", [
-                            m("a[href=]", {
-                                onclick: function(e) {
-                                    copyToClipboard(row.username);
-                                    showCopiedToClipboardNotification(
-                                        e.clientX,
-                                        e.clientY);
-                                    return false;
-                                }
-                            }, m("span.copyicon")),
-                            " ",
-                            row.username,
-                        ]),
-                        m("td", createCopyLink(row.id)),
-                        m("td", formatDate(row.modified)),
-                    ]);
-                }))
-            ]);
+                SecretList.secretsCount + " secrets"
+            ];
         }
 
         var search = function() {
             var term = document.getElementById("searchbox").value.toLowerCase();
 
+            SecretList.secretsCount = 0;
             for (var i = 0; i < Secret.list.length; i++) {
                 var row = Secret.list[i];
                 row.hidden = true;
@@ -144,6 +155,7 @@ var SecretList = {
                 var inUsername = row.username.toLowerCase().indexOf(term) != -1;
                 if (inTitle || inUsername) {
                     row.hidden = false;
+                    SecretList.secretsCount++;
                 }
             }
         }
