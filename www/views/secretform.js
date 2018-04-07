@@ -69,6 +69,123 @@ var SecretForm = {
             ]);
         }
 
+        var attachmentsRows = null;
+        if (Secret.current.attachments) {
+            // Copied from https://chawi3.wordpress.com/2015/03/03/arraybuffer-to-base64-base64-to-arraybuffer-javascript/
+            function base64ToArrayBuffer(base64) {
+                var binary_string =  window.atob(base64);
+                var len = binary_string.length;
+                var bytes = new Uint8Array(len);
+                for (var i = 0; i < len; i++) {
+                    bytes[i] = binary_string.charCodeAt(i);
+                }
+
+                return bytes.buffer;
+            }
+
+            attachmentsRows = [];
+            for (var i = 0; i < Secret.current.attachments.length; i++) {
+                attachment = Secret.current.attachments[i];
+
+                var mimeType = "application/octet-binary";
+                var viewable = false;
+                var s = attachment.name.toLowerCase();
+
+                if (s.endsWith(".jpg") || s.endsWith(".jpeg")) {
+                    mimeType = "image/jpeg";
+                    viewable = true;
+                }
+
+                if (s.endsWith(".png")) {
+                    mimeType = "image/png";
+                    viewable = true;
+                }
+
+                if (s.endsWith(".gif")) {
+                    mimeType = "image/gif";
+                    viewable = true;
+                }
+
+                if (s.endsWith(".txt")) {
+                    mimeType = "text/plain";
+                    viewable = true;
+                }
+
+                if (s.endsWith(".html") || s.endsWith(".htm")) {
+                    mimeType = "text/html";
+                    viewable = true;
+                }
+
+                var blob = new Blob([base64ToArrayBuffer(attachment.data)], {type: mimeType});
+
+                var objUrl = window.URL.createObjectURL(blob);
+
+                var attachmentRow = m("div", [
+                    attachment.name,
+                    " [ ",
+                    !viewable ? null : [m("a", {href: objUrl }, "View"), " | "],
+                    m("a", {download: attachment.name, href: objUrl }, "Download"),
+                    " | ",
+                    m("a[href=]", {
+                        onclick: function(i, attachmentName) {
+                            return function() {
+                                if (confirm("Are you sure you want to remove " + attachmentName + "?")) {
+                                    Secret.current.attachments.splice(i, 1);
+                                }
+                                return false; }
+                            }(i, attachment.name)
+                        }, "Remove"),
+                    " ]",
+                ]);
+
+                attachmentsRows.push(attachmentRow);
+            }
+        }
+
+        var makeFileAttacher = function() {
+            return function() {
+                var input = document.createElement("input");
+                input.type = "file";
+                input.style = "display: none";
+                input.onchange = function(inputEvent) {
+                    var filename = inputEvent.target.files[0].name;
+                    var reader = new FileReader();
+                    reader.onload = function (readerEvent) {
+                        // Copied from https://chawi3.wordpress.com/2015/03/03/arraybuffer-to-base64-base64-to-arraybuffer-javascript/
+                        function arrayBufferToBase64(buffer) {
+                            var binary = '';
+                            var bytes = new Uint8Array(buffer);
+                            var len = bytes.byteLength;
+                            for (var i = 0; i < len; i++) {
+                                binary += String.fromCharCode(bytes[i]);
+                            }
+
+                            return window.btoa(binary);
+                        }
+
+                        if (!Secret.current.attachments) {
+                            Secret.current.attachments = [];
+                        }
+
+                        Secret.current.attachments.push({
+                            name: filename,
+                            data: arrayBufferToBase64(readerEvent.target.result)
+                        });
+
+                        m.redraw();
+                    }
+
+                    reader.readAsArrayBuffer(inputEvent.target.files[0]);
+                };
+
+                document.body.appendChild(input);
+                input.click();
+                input.remove();
+
+                return false;
+            }
+        };
+
         var owner = null;
         if (User.list.length > 1) {
             owner = m(".pure-control-group", [
@@ -142,6 +259,16 @@ var SecretForm = {
                         cols: 22,
                         rows: 6,
                     }),
+                ]),
+
+                m(".pure-controls", [
+                    m("label", "File attachments"),
+                    m("div",  [
+                        attachmentsRows,
+                        m("a[href=]", {
+                            onclick: makeFileAttacher()
+                        }, "Attach file"),
+                    ]),
                 ]),
 
                 owner,
