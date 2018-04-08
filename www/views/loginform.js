@@ -20,7 +20,7 @@ var LoginForm = {
                 },
 
                 // Unused dummy decoy password field, to prevent browser auto save
-                m("input#password[type=password]", {style: "display: none;", tabindex: -1}),
+                m("input#password2[type=password]", {style: "display: none;", tabindex: -1}),
 
                 m("fieldset", [
                     m(".pure-control-group", [
@@ -36,6 +36,7 @@ var LoginForm = {
                     m(".pure-control-group", [
                         m("label[for=password]", "Password"),
                         m("input#password[type=password]", {
+                            autocomplete: "new-password",
                             oninput: m.withAttr("value", function(value) {
                                 Session.current.password = value;
                             }),

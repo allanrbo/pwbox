@@ -35,6 +35,7 @@ var Profile = {
                     m(".pure-control-group", [
                         m("label[for=oldPassword]", "Old password"),
                         m("input#oldPassword[type=password]", {
+                            autocomplete: "new-password",
                             oninput: m.withAttr("value", function(value) {
                                 UserChangePassword.current.oldPassword = value;
                             }),
@@ -45,6 +46,7 @@ var Profile = {
                     m(".pure-control-group", [
                         m("label[for=password]", "New password"),
                         m("input#password[type=password]", {
+                            autocomplete: "new-password",
                             oninput: m.withAttr("value", function(value) {
                                 UserChangePassword.current.password = value;
                             }),
@@ -55,6 +57,7 @@ var Profile = {
                     m(".pure-control-group", [
                         m("label[for=passwordRepeat]", "New password repeated"),
                         m("input#passwordRepeat[type=password]", {
+                            autocomplete: "new-password",
                             oninput: m.withAttr("value", function(value) {
                                 UserChangePassword.current.passwordRepeat = value;
                             }),
