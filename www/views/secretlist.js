@@ -1,10 +1,12 @@
 var SecretList = {
     secretsCount: null,
+    searchTerm: "",
 
     oninit: function() {
         Secret.list = [];
         Secret.loadList();
         SecretList.currentlyLoadingSecretId = null;
+        SecretList.searchTerm = "";
     },
 
     view: function() {
@@ -101,6 +103,20 @@ var SecretList = {
             }, m("span.geticon"));
         }
 
+        var term = SecretList.searchTerm;
+        console.log(term);
+        SecretList.secretsCount = 0;
+        for (var i = 0; i < Secret.list.length; i++) {
+            var row = Secret.list[i];
+            row.hidden = true;
+            var inTitle = row.title.toLowerCase().indexOf(term) != -1;
+            var inUsername = row.username.toLowerCase().indexOf(term) != -1;
+            if (inTitle || inUsername) {
+                row.hidden = false;
+                SecretList.secretsCount++;
+            }
+        }
+
         var table = Secret.listLoaded ? "No secrets found." : "Loading...";
 
         if (Secret.list.length > 0) {
@@ -144,22 +160,6 @@ var SecretList = {
             ];
         }
 
-        var search = function() {
-            var term = document.getElementById("searchbox").value.toLowerCase();
-
-            SecretList.secretsCount = 0;
-            for (var i = 0; i < Secret.list.length; i++) {
-                var row = Secret.list[i];
-                row.hidden = true;
-                var inTitle = row.title.toLowerCase().indexOf(term) != -1;
-                var inUsername = row.username.toLowerCase().indexOf(term) != -1;
-                if (inTitle || inUsername) {
-                    row.hidden = false;
-                    SecretList.secretsCount++;
-                }
-            }
-        }
-
         return [
             m("h2.content-subhead", "Secrets"),
 
@@ -170,15 +170,16 @@ var SecretList = {
                     e.preventDefault();
                     search();
                 }}, [
-                    m("input#searchbox[type=text][placeholder=Search][autofocus]", {
+                    m("input#searchbox[type=text][placeholder=Search]", {
                         oncreate: function(vnode) {
                             setTimeout(function() {
                                 vnode.dom.focus();
                             }, 0);
                         },
-                        oninput: function() {
-                            search();
-                        }
+                        oninput: m.withAttr("value", function(value) {
+                            SecretList.searchTerm = value;
+                        }),
+                        value: SecretList.searchTerm
                     })
             ]),
             m("br"),
