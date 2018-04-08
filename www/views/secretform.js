@@ -1,5 +1,9 @@
 var SecretForm = {
+    modified: false,
+
     oninit: function(vnode) {
+        SecretForm.modified = false;
+
         Secret.current = {};
         if (vnode.attrs.key != "new") {
             Secret.load(vnode.attrs.key);
@@ -60,7 +64,10 @@ var SecretForm = {
                                 type: "checkbox",
                                 checked: checked,
                                 value: group.name,
-                                onclick: function() { Secret.toggleGroup(group.name); }
+                                onclick: function() {
+                                    Secret.toggleGroup(group.name);
+                                    SecretForm.modified = true;
+                                }
                             }),
                             " " + group.name
                         ])
@@ -131,6 +138,7 @@ var SecretForm = {
                             return function() {
                                 if (confirm("Are you sure you want to remove " + attachmentName + "?")) {
                                     Secret.current.attachments.splice(i, 1);
+                                    SecretForm.modified = true;
                                 }
                                 return false; }
                             }(i, attachment.name)
@@ -172,6 +180,8 @@ var SecretForm = {
                             data: arrayBufferToBase64(readerEvent.target.result)
                         });
 
+                        SecretForm.modified = true;
+
                         m.redraw();
                     }
 
@@ -193,6 +203,7 @@ var SecretForm = {
                 m("select#owner", {
                     onchange: m.withAttr("value", function(value) {
                         Secret.current.owner = value;
+                        SecretForm.modified = true;
                     })},
                     User.list.map(function(user) {
                         var selected = "";
@@ -209,21 +220,31 @@ var SecretForm = {
             ]);
         }
 
-        var form = m("form.pure-form.pure-form-aligned",
-            {
+        var form = m("form.pure-form.pure-form-aligned", {
                 onsubmit: function(e) {
                     e.preventDefault();
-                    Secret.save().then(function() {
+
+                    if (SecretForm.modified) {
+                        Secret.save().then(function() {
+                            m.route.set("/secrets");
+                        });
+                    } else {
                         m.route.set("/secrets");
-                    });
+                    }
                 }
             },
             m("fieldset", [
                 m(".pure-control-group", [
                     m("label[for=title]", "Title"),
                     m("input#title[type=text][autocomplete=off]", {
+                        oncreate: function(vnode) {
+                            setTimeout(function() {
+                                vnode.dom.focus();
+                            }, 0);
+                        },
                         oninput: m.withAttr("value", function(value) {
                             Secret.current.title = value;
+                            SecretForm.modified = true;
                         }),
                         value: Secret.current.title
                     }),
@@ -234,6 +255,7 @@ var SecretForm = {
                     m("input#username[type=text][autocomplete=off]", {
                         oninput: m.withAttr("value", function(value) {
                             Secret.current.username = value;
+                            SecretForm.modified = true;
                         }),
                         value: Secret.current.username
                     }),
@@ -244,6 +266,7 @@ var SecretForm = {
                     m("input#password[type=text][autocomplete=off]", {
                         oninput: m.withAttr("value", function(value) {
                             Secret.current.password = value;
+                            SecretForm.modified = true;
                         }),
                         value: Secret.current.password
                     }),
@@ -254,6 +277,7 @@ var SecretForm = {
                     m("textarea#notes", {
                         oninput: m.withAttr("value", function(value) {
                             Secret.current.notes = value;
+                            SecretForm.modified = true;
                         }),
                         value: Secret.current.notes,
                         cols: 22,
@@ -276,7 +300,14 @@ var SecretForm = {
                 shareWithUserGroups,
 
                 m(".pure-controls", [
-                    m("button[type=submit].pure-button pure-button-primary", "Save"),
+                    m("button[type=submit].pure-button pure-button-primary", SecretForm.modified ? "Save" : "Back"),
+                    SecretForm.modified ? [
+                        " ",
+                        m("button.pure-button", {onclick: function(e) {
+                            e.preventDefault();
+                            m.route.set("/secrets");
+                        }}, "Back")
+                    ] : null,
                     " ",
                     deleteButton
                 ]),
