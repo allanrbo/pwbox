@@ -27,14 +27,34 @@ function gpgInvoke($cmd, $stdin = "", $passphrase = null, $getStdErr = false, $a
 
     if($passphrase != null) {
         fwrite($pipes[3], $passphrase);
-        fclose($pipes[3]);
     }
 
-    fwrite($pipes[0], $stdin);
+    fclose($pipes[3]);
+
+    stream_set_blocking($pipes[1], false);
+    stream_set_blocking($pipes[2], false);
+
+    $output = "";
+    $stderr = "";
+    $pos = 0;
+    $len = strlen($stdin);
+    while($pos < $len) {
+
+        $output .= stream_get_contents($pipes[1]);
+        $stderr .= stream_get_contents($pipes[2]);
+
+        $s = substr($stdin, $pos, 8192);
+        fwrite($pipes[0], $s);
+        $pos += 8192;
+    }
+
     fclose($pipes[0]);
 
-    $output = stream_get_contents($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]);
+    stream_set_blocking($pipes[1], true);
+    stream_set_blocking($pipes[2], true);
+
+    $output .= stream_get_contents($pipes[1]);
+    $stderr .= stream_get_contents($pipes[2]);
 
     fclose($pipes[1]);
     fclose($pipes[2]);
