@@ -82,10 +82,15 @@ function gpgUsernameValid($username) {
 
 
 function gpgPassphraseValid($passphrase) {
+    if($passphrase == "") {
+        return false;
+    }
+
     // Allow only printable ASCII as password
     if(preg_match("/[^\\x20-\\x7E]/", $passphrase)) {
         return false;
     }
+
     return true;
 }
 
