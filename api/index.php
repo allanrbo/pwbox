@@ -30,10 +30,26 @@ if ($method == "POST" && $uri == "/authenticate") {
     writelog("Requested $method on $uri");
 
     $data = json_decode(file_get_contents("php://input"), true);
+
+    $deny = function() {
+        sleep(3);
+        http_response_code(401);
+        echo json_encode(["status" => "error", "message" => "Invalid credentials."]);
+        exit();
+    };
+
+    if (!isset($data["username"]) || !isset($data["password"])) {
+        $deny();
+    }
+
     $username = $data["username"];
     $password = $data["password"];
 
     $userProfilesPath = getDataPath() . "/userprofiles";
+    if (!file_exists("$userProfilesPath/$username")) {
+        $deny();
+    }
+
     $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
     $expectedOtp = "";
     if (isset($user["otpKey"])) {
@@ -41,25 +57,21 @@ if ($method == "POST" && $uri == "/authenticate") {
     }
 
     if (!verifyCredentials($username, $password)) {
-        sleep(3);
-        http_response_code(401);
-        echo json_encode(["status" => "error", "message" => "Invalid credentials."]);
-        exit();
+        $deny();
     }
 
     if (!isset($data["otp"])) {
         $data["otp"] = "";
     }
 
-    if (isset($user["otpKey"]) && $expectedOtp != $data["otp"] && (isset($user["emergencyPasswords"]) && !in_array($data["otp"], $user["emergencyPasswords"]))) {
-        sleep(3);
-        http_response_code(401);
-        echo json_encode(["status" => "error", "message" => "Invalid credentials."]);
-        exit();
+    $correctOtpKey = $expectedOtp == $data["otp"];
+    $correctEmergencyKey = isset($user["emergencyPasswords"]) && in_array($data["otp"], $user["emergencyPasswords"]);
+    if (!$correctOtpKey && !$correctEmergencyKey) {
+        $deny();
     }
 
     // Remove consumed emergency one-time password
-    if (isset($user["otpKey"]) && isset($data["otp"]) && (isset($user["emergencyPasswords"]) && in_array($data["otp"], $user["emergencyPasswords"]))) {
+    if ($correctEmergencyKey) {
         writelog("Emergency one-time password was used for $username");
         $user["emergencyPasswords"] = array_diff($user["emergencyPasswords"], [$data["otp"]]);
         file_put_contents("$userProfilesPath/$username", json_encode($user));
