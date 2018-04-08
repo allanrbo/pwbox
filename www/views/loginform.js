@@ -26,6 +26,11 @@ var LoginForm = {
                     m(".pure-control-group", [
                         m("label[for=username]", "Username"),
                         m("input#username[type=text]", {
+                            oncreate: function(vnode) {
+                                setTimeout(function() {
+                                    vnode.dom.focus();
+                                }, 0);
+                            },
                             oninput: m.withAttr("value", function(value) {
                                 Session.current.username = value;
                             }),
