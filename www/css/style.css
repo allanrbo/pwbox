@@ -149,6 +149,10 @@ table.secretslist th.modified { width: 5.5em; }
     display: inline-block;
 }
 
+.pure-form-aligned .custom-control-group label {
+    vertical-align: top;
+}
+
 .pure-form-aligned .custom-control-group .custom-control label {
     text-align: left;
     padding-left: 0.5em;
@@ -163,4 +167,14 @@ table.secretslist th.modified { width: 5.5em; }
 .pure-form-aligned .pure-control-group textarea#notes {
     width: 21em;
     height: 12em;
+}
+
+@media only screen and (max-width: 480px) {
+    .pure-form-aligned .pure-control-group label:after {
+        content: ":";
+    }
+
+    .pure-form-aligned .pure-control-group .custom-control label:after {
+        content: initial;
+    }
 }
