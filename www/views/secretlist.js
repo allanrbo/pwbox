@@ -101,8 +101,7 @@ var SecretList = {
             }, m("span.geticon"));
         }
 
-        var term = SecretList.searchTerm;
-        console.log(term);
+        var term = SecretList.searchTerm.toLowerCase();
         SecretList.secretsCount = 0;
         for (var i = 0; i < Secret.list.length; i++) {
             var row = Secret.list[i];
