@@ -132,9 +132,10 @@ var SecretForm = {
                 var attachmentRow = m("div", [
                     attachment.name,
                     " [ ",
-                    !viewable ? null : [m("a", {href: objUrl }, "View"), " | "],
-                    m("a", {download: attachment.name, href: objUrl }, "Download"),
-                    " | ",
+                    !viewable ? null : m("a", {href: objUrl }, m("span.fa.fa-eye")),
+                    " ",
+                    m("a", {download: attachment.name, href: objUrl }, m("span.fa.fa-download")),
+                    " ",
                     m("a[href=]", {
                         onclick: function(i, attachmentName) {
                             return function() {
@@ -144,8 +145,8 @@ var SecretForm = {
                                 }
                                 return false; }
                             }(i, attachment.name)
-                        }, "Remove"),
-                    " ]",
+                        }, m("span.fa.fa-trash-o")),
+                    " ] "
                 ]);
 
                 attachmentsRows.push(attachmentRow);

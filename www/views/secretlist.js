@@ -90,7 +90,7 @@ var SecretList = {
 
                                 return false;
                             }
-                        }, [m("span.copyicon"), "***"])
+                        }, [m("span.fa.fa-copy", {style: "margin-right: 0.2em;"}), "***"])
                     ];
                 } else {
                     return "None"
@@ -107,7 +107,7 @@ var SecretList = {
 
                     return false;
                 }
-            }, m("span.geticon"));
+            }, m("span.fa.fa-cloud-download"));
         }
 
         var term = SecretList.searchTerm.toLowerCase();
@@ -143,7 +143,10 @@ var SecretList = {
                     ]),
                     m("tbody", Secret.list.map(function(row) {
                         return m("tr", { style: row.hidden ? "display: none" : "" }, [
-                            m("td", m("a", {href: "/secrets/" + row.id, oncreate: m.route.link}, row.title)),
+                            m("td", m("a", {href: "/secrets/" + row.id, oncreate: m.route.link}, [
+                                m("span.fa.fa-edit", {style: "margin-right: 0.2em;"}),
+                                row.title
+                            ])),
                             m("td",
                                 !row.username ? null : m("a[href=]", {
                                     onclick: function(e) {
@@ -153,7 +156,7 @@ var SecretList = {
                                             e.clientY);
                                         return false;
                                     }
-                                }, [m("span.copyicon"), row.username])
+                                }, [m("span.fa.fa-copy", {style: "margin-right: 0.2em;"}), row.username])
                             ),
                             m("td", createCopyLink(row.id)),
                             m("td", formatDate(row.modified)),
