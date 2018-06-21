@@ -42,7 +42,18 @@ var SecretList = {
             input.value = value;
             input.focus();
             input.select();
+
+            // iOS specific ( https://stackoverflow.com/questions/34045777/copy-to-clipboard-using-javascript-in-ios )
+            var range = document.createRange();
+            range.selectNodeContents(input);
+            var s = window.getSelection();
+            s.removeAllRanges();
+            s.addRange(range);
+            input.contenteditable = true;
+            input.setSelectionRange(0, 999999);
+
             document.execCommand("Copy");
+
             input.remove();
         };
 
