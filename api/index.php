@@ -42,7 +42,7 @@ if ($method == "POST" && $uri == "/authenticate") {
         $deny();
     }
 
-    $username = $data["username"];
+    $username = strtolower($data["username"]);
     $password = $data["password"];
 
     $userProfilesPath = getDataPath() . "/userprofiles";
@@ -99,19 +99,20 @@ if ($method == "POST" && $uri == "/user") {
         exit();
     }
 
+    $username = strtolower($data["username"]);
+
     if (!isset($data["password"]) || !gpgPassphraseValid($data["password"])) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Password is invalid."]);
         exit();
     }
 
-    if (gpgUserExists($data["username"])) {
+    if (gpgUserExists($username)) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "User already exists"]);
         exit();
     }
 
-    $username = $data["username"];
     gpgCreateUser($username, $data["password"]);
 
     unset($data["username"]);
@@ -134,7 +135,7 @@ if ($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
-    $username = $matches[1];
+    $username = strtolower($matches[1]);
 
     if($username != $authInfo["username"]) {
         requireAdminGroup($authInfo);
@@ -251,7 +252,7 @@ if ($method == "GET" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
 
-    $username = $matches[1];
+    $username = strtolower($matches[1]);
 
     if($username != $authInfo["username"]) {
         requireAdminGroup($authInfo);
