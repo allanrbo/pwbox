@@ -1,6 +1,10 @@
 var LoginForm = {
     oninit: function() {
         Session.current = {};
+
+        if (Session.getSessionRemainingTimeSecs() > 0) {
+            m.route.set("/secrets");
+        }
     },
 
     view: function() {
