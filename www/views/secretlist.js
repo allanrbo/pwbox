@@ -79,7 +79,6 @@ var SecretList = {
             }
 
             if (rowId == Secret.current.id) {
-                console.log(rowId);
                 if (Secret.current.password) {
                     return [
                         m("a[href=]", {
@@ -91,8 +90,7 @@ var SecretList = {
 
                                 return false;
                             }
-                        }, m("span.copyicon")),
-                        " ***"
+                        }, [m("span.copyicon"), "***"])
                     ];
                 } else {
                     return "None"
@@ -146,8 +144,8 @@ var SecretList = {
                     m("tbody", Secret.list.map(function(row) {
                         return m("tr", { style: row.hidden ? "display: none" : "" }, [
                             m("td", m("a", {href: "/secrets/" + row.id, oncreate: m.route.link}, row.title)),
-                            m("td", [
-                                m("a[href=]", {
+                            m("td",
+                                !row.username ? null : m("a[href=]", {
                                     onclick: function(e) {
                                         copyToClipboard(row.username);
                                         showCopiedToClipboardNotification(
@@ -155,10 +153,8 @@ var SecretList = {
                                             e.clientY);
                                         return false;
                                     }
-                                }, m("span.copyicon")),
-                                " ",
-                                row.username,
-                            ]),
+                                }, [m("span.copyicon"), row.username])
+                            ),
                             m("td", createCopyLink(row.id)),
                             m("td", formatDate(row.modified)),
                         ]);
