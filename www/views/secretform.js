@@ -51,7 +51,7 @@ var SecretForm = {
         var shareWithUserGroups = null;
         if (availableGroups.length > 0) {
             shareWithUserGroups = m(".pure-control-group.custom-control-group", [
-                m("label", "Shared with user groups"),
+                m("label", "Share with groups"),
                 m(".custom-control",
                     availableGroups.map(function(group) {
                         var checked = false;
@@ -223,6 +223,34 @@ var SecretForm = {
             ]);
         }
 
+        var lastModified = null;
+        if (Secret.current.modified) {
+
+            var formatDate = function(date) {
+                if (typeof(date) === "string") {
+                    date = new Date(date);
+                }
+
+                function pad(n) {
+                    var str = "" + n;
+                    var pad = "00";
+                    return pad.substring(0, pad.length - str.length) + str;
+                }
+
+                return date.getFullYear()
+                    + "-" + pad(date.getMonth())
+                    + "-" + pad(date.getDate())
+                    + " " + pad(date.getHours())
+                    + ":" + pad(date.getMinutes())
+                    + ":" + pad(date.getSeconds());
+            };
+
+            lastModified = m(".pure-control-group.custom-control-group", [
+                m("label", "Last modified"),
+                m(".custom-control", formatDate(Secret.current.modified))
+            ]);
+        }
+
         var form = m("form.pure-form.pure-form-aligned", {
                 onsubmit: function(e) {
                     e.preventDefault();
@@ -302,6 +330,8 @@ var SecretForm = {
                 owner,
 
                 shareWithUserGroups,
+
+                lastModified,
 
                 m(".pure-controls", [
                     m("button[type=submit].pure-button pure-button-primary", SecretForm.modified ? "Save" : "Back"),
