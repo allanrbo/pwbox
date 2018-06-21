@@ -281,9 +281,7 @@ var SecretForm = {
                             Secret.current.notes = value;
                             SecretForm.modified = true;
                         }),
-                        value: Secret.current.notes,
-                        cols: 22,
-                        rows: 6,
+                        value: Secret.current.notes
                     }),
                 ]),
 

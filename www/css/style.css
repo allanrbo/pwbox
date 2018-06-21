@@ -177,3 +177,8 @@ table.secretslist th.modified { width: 5.5em; }
         padding-left: 0;
     }
 }
+
+.pure-form-aligned .pure-control-group textarea#notes {
+    width: 21em;
+    height: 12em;
+}
