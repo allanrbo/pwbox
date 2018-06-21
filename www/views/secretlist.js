@@ -59,9 +59,7 @@ var SecretList = {
 
             return date.getFullYear()
                 + "-" + pad(date.getMonth())
-                + "-" + pad(date.getDate())
-                + " " + pad(date.getHours())
-                + ":" + pad(date.getMinutes());
+                + "-" + pad(date.getDate());
         };
 
         var createCopyLink = function(rowId) {
@@ -83,7 +81,7 @@ var SecretList = {
                                 return false;
                             }
                         }, m("span.copyicon")),
-                        " *****"
+                        " ***"
                     ];
                 } else {
                     return "None"
@@ -129,10 +127,10 @@ var SecretList = {
                 m("table.pure-table.pure-table-horizontal.secretslist", [
                     m("thead", [
                         m("tr", [
-                            m("th", {style: ""}, "Title"),
-                            m("th", {style: ""}, "Username"),
-                            m("th", {style: "width: 5em;"}, "Password"),
-                            m("th", {style: "width: 8em;"}, "Modified"),
+                            m("th.title", "Title"),
+                            m("th.username", "User"),
+                            m("th.password", "Pass"),
+                            m("th.modified", "Modified"),
                         ])
                     ]),
                     m("tbody", Secret.list.map(function(row) {
@@ -156,7 +154,7 @@ var SecretList = {
                         ]);
                     }))
                 ]),
-                SecretList.secretsCount + " secrets"
+                m("p", SecretList.secretsCount + " secrets")
             ];
         }
 

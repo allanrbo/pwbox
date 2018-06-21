@@ -50,29 +50,31 @@ var SecretForm = {
 
         var shareWithUserGroups = null;
         if (availableGroups.length > 0) {
-            shareWithUserGroups = m(".pure-controls", [
+            shareWithUserGroups = m(".pure-control-group.custom-control-group", [
                 m("label", "Shared with user groups"),
-                availableGroups.map(function(group) {
-                    var checked = false;
-                    if (Secret.current.groups && Secret.current.groups.indexOf(group.name) > -1) {
-                        checked = true;
-                    }
+                m(".custom-control",
+                    availableGroups.map(function(group) {
+                        var checked = false;
+                        if (Secret.current.groups && Secret.current.groups.indexOf(group.name) > -1) {
+                            checked = true;
+                        }
 
-                    return m("div",
-                        m("label", [
-                            m("input", {
-                                type: "checkbox",
-                                checked: checked,
-                                value: group.name,
-                                onclick: function() {
-                                    Secret.toggleGroup(group.name);
-                                    SecretForm.modified = true;
-                                }
-                            }),
-                            " " + group.name
-                        ])
-                    );
-                })
+                        return m("div",
+                            m("label", [
+                                m("input", {
+                                    type: "checkbox",
+                                    checked: checked,
+                                    value: group.name,
+                                    onclick: function() {
+                                        Secret.toggleGroup(group.name);
+                                        SecretForm.modified = true;
+                                    }
+                                }),
+                                " " + group.name
+                            ])
+                        );
+                    })
+                )
             ]);
         }
 
@@ -285,14 +287,17 @@ var SecretForm = {
                     }),
                 ]),
 
-                m(".pure-controls", [
+                m(".pure-control-group.custom-control-group", [
                     m("label", "File attachments"),
-                    m("div",  [
-                        attachmentsRows,
-                        m("a[href=]", {
-                            onclick: makeFileAttacher()
-                        }, "Attach file"),
-                    ]),
+
+                    m(".custom-control", [
+                        m("div",  [
+                            attachmentsRows,
+                            m("a[href=]", {
+                                onclick: makeFileAttacher()
+                            }, "Attach file"),
+                        ])
+                    ])
                 ]),
 
                 owner,

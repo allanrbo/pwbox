@@ -148,3 +148,32 @@ table.secretslist td, table.secretslist th {
     white-space:nowrap;
     text-overflow: ellipsis;
 }
+
+table.secretslist th.password { width: 3em; }
+table.secretslist th.modified { width: 5.5em; }
+
+@media only screen and (max-width: 480px) {
+    .content { padding: 1.2em; }
+    table.secretslist th, table.secretslist td { padding: 0.2em 0.4em; }
+    .pure-form button { margin: 0.7em 0 0; }
+}
+
+.pure-form-aligned .custom-control-group {
+    white-space: nowrap;
+}
+
+.pure-form-aligned .custom-control-group .custom-control {
+    vertical-align: top;
+    display: inline-block;
+}
+
+.pure-form-aligned .custom-control-group .custom-control label {
+    text-align: left;
+    padding-left: 0.5em;
+}
+
+@media only screen and (max-width: 480px) {
+    .pure-form-aligned .pure-control-group .custom-control label {
+        padding-left: 0;
+    }
+}
