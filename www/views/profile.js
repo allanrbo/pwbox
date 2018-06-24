@@ -4,8 +4,6 @@ var Profile = {
         User.load(Session.getUsername());
 
         UserChangePassword.current = {};
-
-        UserChangeOtpKey.current = {};
     },
 
     view: function() {
