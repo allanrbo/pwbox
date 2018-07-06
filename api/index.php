@@ -68,9 +68,9 @@ if ($method == "POST" && $uri == "/authenticate") {
     }
 
     $verifiedTrustedDevice = false;
-    if (isset($data["trustedDevice"]) && isset($data["trustedDevice"]["token"]) && isset($user["trustedDevices"])) {
+    if (isset($data["trustedDeviceToken"]) && isset($user["trustedDevices"])) {
         foreach ($user["trustedDevices"] as $trustedDevice) {
-            if ($trustedDevice["token"] === $data["trustedDevice"]["token"]) {
+            if ($trustedDevice["token"] === $data["trustedDeviceToken"]) {
                 $verifiedTrustedDevice = true;
                 break;
             }
