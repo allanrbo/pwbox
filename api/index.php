@@ -31,15 +31,17 @@ if ($method == "POST" && $uri == "/authenticate") {
 
     $data = json_decode(file_get_contents("php://input"), true);
 
-    $deny = function() {
-        sleep(3);
-        http_response_code(401);
-        echo json_encode(["status" => "error", "message" => "Invalid credentials."]);
+    $alreadyTrustedDevice = isset($data["trustedDeviceToken"]) && $data["trustedDeviceToken"] != null;
+    $trustDevice = isset($data["trustDevice"]) && $data["trustDevice"] == true;
+    $hasTrustedDeviceName = isset($data["trustedDeviceName"]) && $data["trustedDeviceName"] != "";
+    if (!$alreadyTrustedDevice && $trustDevice && !$hasTrustedDeviceName) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Please provide a name for this device. It will be used for the overview of trusted devices on the user profile page."]);
         exit();
-    };
+    }
 
     if (!isset($data["username"]) || !isset($data["password"])) {
-        $deny();
+        deny();
     }
 
     $username = strtolower($data["username"]);
@@ -47,27 +49,43 @@ if ($method == "POST" && $uri == "/authenticate") {
 
     $userProfilesPath = getDataPath() . "/userprofiles";
     if (!file_exists("$userProfilesPath/$username")) {
-        $deny();
+        deny();
     }
 
     $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
+
     $expectedOtp = "";
     if (isset($user["otpKey"])) {
         $expectedOtp = generateOtp($user["otpKey"]);
     }
 
     if (!verifyCredentials($username, $password)) {
-        $deny();
+        deny();
     }
 
     if (!isset($data["otp"])) {
         $data["otp"] = "";
     }
 
+    $verifiedTrustedDevice = false;
+    if (isset($data["trustedDevice"]) && isset($data["trustedDevice"]["token"]) && isset($user["trustedDevices"])) {
+        foreach ($user["trustedDevices"] as $trustedDevice) {
+            if ($trustedDevice["token"] === $data["trustedDevice"]["token"]) {
+                $verifiedTrustedDevice = true;
+                break;
+            }
+        }
+
+        if (!$verifiedTrustedDevice) {
+            writelog("Tried to authenticate as trusted device, but token was not recognized");
+            deny();
+        }
+    }
+
     $correctOtpKey = $expectedOtp == $data["otp"];
     $correctEmergencyKey = isset($user["emergencyPasswords"]) && in_array($data["otp"], $user["emergencyPasswords"]);
-    if (!$correctOtpKey && !$correctEmergencyKey) {
-        $deny();
+    if (!$verifiedTrustedDevice && !$correctOtpKey && !$correctEmergencyKey) {
+        deny();
     }
 
     // Remove consumed emergency one-time password
@@ -77,8 +95,34 @@ if ($method == "POST" && $uri == "/authenticate") {
         file_put_contents("$userProfilesPath/$username", json_encode($user));
     }
 
+    // Is this a device not previously trusted, that we should start trusting?
+    $trustedDevice = null;
+    if (!$alreadyTrustedDevice && $trustDevice) {
+        $trustedDeviceName = $data["trustedDeviceName"];
+        writelog("Storing trusted device for user $username with device name $trustedDeviceName");
+
+        if (!isset($user["trustedDevices"])) {
+            $user["trustedDevices"] = [];
+        }
+
+        $trustedDevice = [
+            "id" => uniqid(),
+            "token" => base64_encode(openssl_random_pseudo_bytes(512)),
+            "name" => $trustedDeviceName,
+            "added" => gmdate("Y-m-d\\TH:i:s\\Z"),
+            "addedFromRemoteAddr" => $_SERVER["REMOTE_ADDR"]
+        ];
+        $user["trustedDevices"][] = $trustedDevice;
+
+        file_put_contents("$userProfilesPath/$username", json_encode($user));
+    }
+
     $token = generateToken($username, $password);
-    echo json_encode(["token" => $token, "tokenExpiryMinutes" => getconfig()["tokenExpiryMinutes"]]);
+    echo json_encode([
+        "token" => $token,
+        "tokenExpiryMinutes" => getconfig()["tokenExpiryMinutes"],
+        "trustedDevice" => $trustedDevice
+    ]);
     exit();
 }
 
@@ -261,11 +305,22 @@ if ($method == "GET" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) 
     if (gpgUserExists($username)) {
         $userProfilesPath = getDataPath() . "/userprofiles";
         $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
+
+        // Add extra "virtual" fields for convenience
         $user["username"] = $username;
         $user["groupMemberships"] = getGroupMemberships($username);
         $user["otpEnabled"] = isset($user["otpKey"]);
+
+        // Remove sensitive data that should stay internal only
         unset($user["otpKey"]);
         unset($user["emergencyPasswords"]);
+        unset($user["secretsListCache"]);
+        if (isset($user["trustedDevices"])) {
+            for ($i = 0; $i < count($user["trustedDevices"]); $i++) {
+                unset($user["trustedDevices"][$i]["token"]);
+            }
+        }
+
         echo json_encode($user);
     } else {
         http_response_code(404);
@@ -1055,6 +1110,111 @@ if ($method == "POST" && ($uri == "/changebackuptoken/secrets" || $uri == "/chan
     exit();
 }
 
+
+/*
+ * Remove trusted device endpoint
+ */
+$matches = null;
+if ($method == "POST" && $uri == "/removetrusteddevicebyid") {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!isset($data["id"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "ID of trusted device to remove required."]);
+        exit();
+    }
+
+    $username = $authInfo["username"];
+    $userProfilesPath = getDataPath() . "/userprofiles";
+    $user = json_decode(file_get_contents("$userProfilesPath/$username"), true);
+
+    $found = false;
+    if (isset($user["trustedDevices"])) {
+        for ($i = 0; $i < count($user["trustedDevices"]); $i++) {
+            if ($user["trustedDevices"][$i]["id"] == $data["id"]) {
+                array_splice($user["trustedDevices"], $i, 1);
+                $found = true;
+                break;
+            }
+        }
+    }
+
+    if (!$found) {
+        http_response_code(404);
+        echo json_encode(["status" => "error", "message" => "Trusted device to remove not found."]);
+        exit();
+    }
+
+    file_put_contents("$userProfilesPath/$username", json_encode($user));
+
+    echo json_encode(["status" => "ok"]);
+    exit();
+}
+
+
+/*
+ * Remove trusted device endpoint, unauthenticated, only when give a valid token
+ */
+$matches = null;
+if ($method == "POST" && $uri == "/removetrusteddevicebyidunauthenticated") {
+    writelog("Requested $method on $uri");
+
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!isset($data["id"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "ID of trusted device to remove required."]);
+        exit();
+    }
+
+    if (!isset($data["username"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Username required."]);
+        exit();
+    }
+
+    if (!isset($data["token"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Token required."]);
+        exit();
+    }
+
+    $username = $data["username"];
+    $userProfilesPath = getDataPath() . "/userprofiles";
+    $path = "$userProfilesPath/$username";
+    if (!file_exists($path)) {
+        writelog("Attempt to delete trusted device for unknown user $username");
+        // Avoiding information leakage on whether this is valid user
+        deny();
+    }
+
+    $user = json_decode(file_get_contents($path), true);
+
+    $found = false;
+    if (isset($user["trustedDevices"])) {
+        for ($i = 0; $i < count($user["trustedDevices"]); $i++) {
+            if ($user["trustedDevices"][$i]["id"] == $data["id"] && $user["trustedDevices"][$i]["token"] == $data["token"]) {
+                array_splice($user["trustedDevices"], $i, 1);
+                $found = true;
+                break;
+            }
+        }
+    }
+
+    if (!$found) {
+        writelog("Attempt to delete trusted device using bad token for user $username");
+        // Avoiding information leakage on whether this is valid user
+        deny();
+    }
+
+    file_put_contents("$userProfilesPath/$username", json_encode($user));
+
+    echo json_encode(["status" => "ok"]);
+    exit();
+}
 
 
 /*

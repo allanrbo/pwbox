@@ -1,8 +1,6 @@
 var BackupRestorePage = {
     oninit: function(vnode) {
         BackupRestore.loadBackupTokenStatus();
-        BackupRestore.secretsBackupToken = {};
-        BackupRestore.usersBackupToken = {};
 
         BackupRestorePage.showspinner = false;
     },
