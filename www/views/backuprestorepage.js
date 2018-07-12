@@ -76,7 +76,9 @@ var BackupRestorePage = {
                 m("fieldset", [
                     m(".pure-controls", [
                         m("button.pure-button pure-button-primary", {
-                            onclick: function() {
+                            onclick: function(e) {
+                                e.preventDefault();
+
                                 if (isTokenEnabled && !confirm("Generating a new token will invalidate your old external backup token. Are you sure?")) {
                                     return;
                                 }
@@ -92,7 +94,9 @@ var BackupRestorePage = {
                 isTokenEnabled ? m("fieldset", [
                     m(".pure-controls", [
                         m("button[type=submit].pure-button pure-button-primary", {
-                            onclick: function() {
+                            onclick: function(e) {
+                                e.preventDefault();
+
                                 if (!confirm("This will disable external tar backup. Are you sure?")) {
                                     return;
                                 }
