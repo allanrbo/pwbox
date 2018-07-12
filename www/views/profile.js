@@ -7,6 +7,42 @@ var Profile = {
     },
 
     view: function() {
+
+        var trustedDevicesTable = "No trusted devices.";
+
+        if (User.current.trustedDevices && User.current.trustedDevices.length > 0) {
+            trustedDevicesTable = m("table.pure-table.pure-table-horizontal", [
+                m("thead", [
+                    m("tr", [
+                        m("th", "Device name"),
+                        m("th", "Added time"),
+                        m("th", "Added from IP"),
+                        m("th", "Remove"),
+                    ])
+                ]),
+                m("tbody", User.current.trustedDevices.map(function(row) {
+                    return m("tr", [
+                        m("td", row.name),
+                        m("td", row.added),
+                        m("td", row.addedFromRemoteAddr),
+                        m("td", m("a[href=]", {
+                            onclick: function(id, name) {
+                                return function() {
+                                    if (confirm("Are you sure you want to remove the trusted device " + name + "?")) {
+                                        Session.removeTrustedDeviceById(id).then(function() {
+                                            User.load(Session.getUsername());
+                                        });
+                                    }
+                                    return false;
+                                }
+                            }(row.id, row.name)
+                        }, m("span.fa.fa-trash-o"))),
+                    ]);
+                }))
+            ]),
+            m("p", SecretList.secretsCount + " secrets")
+        }
+
         return [
             m("h2.content-subhead", "User profile"),
 
@@ -69,7 +105,6 @@ var Profile = {
                 ])
             ),
 
-
             m("h3.content-subhead", "Two-factor authentication"),
             !UserChangeOtpKey.current.otpUrl ?
                 "Before generating a key, please ensure you have a one-time password authenticator app installed, such as Google Authenticator."
@@ -129,7 +164,9 @@ var Profile = {
                         }, "Disable two-factor authentication")
                     ])
                 ]) : null
-            )
+            ),
+            m("h3.content-subhead", "Trusted devices"),
+            trustedDevicesTable
         ];
     }
 }

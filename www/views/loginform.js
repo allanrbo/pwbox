@@ -4,6 +4,14 @@ var LoginForm = {
 
         if (Session.getSessionRemainingTimeSecs() > 0) {
             m.route.set("/secrets");
+            return;
+        }
+
+        if (Session.getTrustedDevice()) {
+            Session.current.trustedDeviceToken = Session.getTrustedDevice().token;
+            Session.current.alreadyTrustedDevice = true;
+            Session.current.trustDevice = 1;
+            Session.current.username = Session.getUsername();
         }
     },
 
@@ -31,20 +39,30 @@ var LoginForm = {
                         m("label[for=username]", "Username"),
                         m("input#username[type=text]", {
                             oncreate: function(vnode) {
-                                setTimeout(function() {
-                                    vnode.dom.focus();
-                                }, 0);
+                                if (!Session.current.alreadyTrustedDevice) {
+                                    setTimeout(function() {
+                                        vnode.dom.focus();
+                                    }, 0);
+                                }
                             },
                             oninput: m.withAttr("value", function(value) {
                                 Session.current.username = value;
                             }),
-                            value: Session.current.username
+                            value: Session.current.username,
+                            readonly: Session.current.alreadyTrustedDevice
                         }),
                     ]),
 
                     m(".pure-control-group", [
                         m("label[for=password]", "Password"),
                         m("input#password[type=password]", {
+                            oncreate: function(vnode) {
+                                if (Session.current.alreadyTrustedDevice) {
+                                    setTimeout(function() {
+                                        vnode.dom.focus();
+                                    }, 0);
+                                }
+                            },
                             autocomplete: "new-password",
                             oninput: m.withAttr("value", function(value) {
                                 Session.current.password = value;
@@ -54,6 +72,33 @@ var LoginForm = {
                     ]),
 
                     m(".pure-control-group", [
+                        m("label[for=trustDevice]", "Trust device"),
+                        m("input#trustDevice[type=checkbox]", {
+                            onclick: m.withAttr("checked", function(checked) {
+                                Session.current.trustDevice = checked;
+
+                                if (Session.current.alreadyTrustedDevice && !checked) {
+                                    Session.removeTrustedDevice();
+                                    Session.current.trustedDeviceToken = null;
+                                    Session.current.alreadyTrustedDevice = false;
+                                    Session.current.username = "";
+                               }
+                            }),
+                            checked: Session.current.trustDevice
+                        }),
+                    ]),
+
+                    Session.current.alreadyTrustedDevice || !Session.current.trustDevice ? null : m(".pure-control-group", [
+                        m("label[for=trustedDeviceName]", "Device name"),
+                        m("input#trustedDeviceName[type=text]", {
+                            oninput: m.withAttr("value", function(value) {
+                                Session.current.trustedDeviceName = value;
+                            }),
+                            value: Session.current.trustedDeviceName
+                        }),
+                    ]),
+
+                    Session.current.alreadyTrustedDevice ? null : m(".pure-control-group", [
                         m("label[for=otp]", "Two-factor password"),
                         m("input#otp[type=text]", {
                             oninput: m.withAttr("value", function(value) {

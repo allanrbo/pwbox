@@ -8,7 +8,10 @@ var Session = {
             data: {
                 username: Session.current.username,
                 password: Session.current.password,
-                otp: Session.current.otp
+                otp: Session.current.otp,
+                trustDevice: Session.current.trustDevice,
+                trustedDeviceName: Session.current.trustedDeviceName,
+                trustedDeviceToken: Session.current.trustedDeviceToken
             }
         })
         .then(function(data) {
@@ -20,6 +23,10 @@ var Session = {
             var now = (new Date()).getTime();
             localStorage.setItem("tokenExpiry", now + data.tokenExpiryMinutes*60*1000);
 
+            if (data.trustedDevice) {
+                localStorage.setItem("trustedDevice", JSON.stringify(data.trustedDevice));
+            }
+
             Session.setupLogoutOnSessionExpire();
         })
         .catch(handleUnauthorized)
@@ -28,16 +35,46 @@ var Session = {
     },
 
     logout: function(id) {
-        localStorage.removeItem("username");
         localStorage.removeItem("token");
         localStorage.removeItem("profile");
         localStorage.removeItem("tokenExpiry");
+
+        if (!Session.getTrustedDevice()) {
+            localStorage.removeItem("username");
+        }
 
         Session.current.username = null;
         Session.current.password = null;
 
         Secret.current = {};
         Secret.list = [];
+    },
+
+    removeTrustedDeviceById: function(id) {
+        return m.request({
+            method: "POST",
+            url: "/api/removetrusteddevicebyid",
+            data: {
+                id: id
+            },
+            config: xhrConfig
+        })
+        .catch(handleUnauthorized)
+        .catch(alertErrorMessage);
+    },
+
+    removeTrustedDeviceByIdUnauthenticated: function(id, username, token) {
+        // Best effort. Ignore errors.
+        return m.request({
+            method: "POST",
+            url: "/api/removetrusteddevicebyidunauthenticated",
+            data: {
+                id: id,
+                username: username,
+                token: token
+            },
+            config: xhrConfig
+        });
     },
 
     refreshProfile: function() {
@@ -59,6 +96,17 @@ var Session = {
 
     getProfile: function() {
         return JSON.parse(localStorage.getItem("profile"));
+    },
+
+    getTrustedDevice: function() {
+        return JSON.parse(localStorage.getItem("trustedDevice"));
+    },
+
+    removeTrustedDevice: function() {
+        var trustedDevice = Session.getTrustedDevice();
+        Session.removeTrustedDeviceByIdUnauthenticated(trustedDevice.id, Session.getUsername(), trustedDevice.token);
+
+        return localStorage.removeItem("trustedDevice");
     },
 
     getSessionRemainingTimeSecs: function() {
