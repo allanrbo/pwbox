@@ -387,13 +387,12 @@ function gpgListAllSecretFiles($username, $passphrase, $cache) {
 function gpgGetSecretFile($username, $passphrase, $path) {
     $ciphertext = file_get_contents($path);
 
-    $recipients = gpgRecipientsFromCiphertext($ciphertext);
-    if(!in_array($username, $recipients)) {
+    try {
+        $secret = json_decode(gpgDecryptSecret($username, $passphrase, $ciphertext), true);
+        return $secret;
+    } catch (Exception $e) {
         http_response_code(401);
         echo json_encode(["status" => "error", "message" => "Unauthorized."]);
         exit();
     }
-
-    $secret = json_decode(gpgDecryptSecret($username, $passphrase, $ciphertext), true);
-    return $secret;
 }
