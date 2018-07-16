@@ -35,6 +35,13 @@ var Session = {
     },
 
     logout: function(id) {
+        // Best effort. Ignore errors.
+        m.request({
+            method: "POST",
+            url: "/api/logout",
+            config: xhrConfig
+        });
+
         localStorage.removeItem("token");
         localStorage.removeItem("profile");
         localStorage.removeItem("tokenExpiry");

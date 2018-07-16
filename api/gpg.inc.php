@@ -95,19 +95,13 @@ function gpgPassphraseValid($passphrase) {
 }
 
 
-function gpgSystemUserExists() {
-    $r = gpgInvoke("--list-sigs");
-    return preg_match("/uid .*?system$/m", $r);
-}
-
-
-function gpgListAllUsers($includeSystem = false) {
+function gpgListAllUsers() {
     $r = gpgInvoke("--list-sigs");
     $matches = null;
     preg_match_all("/uid +(.+)/", $r, $matches);
     $users = $matches[1];
 
-    return array_diff($users, ["system"]);
+    return $users;
 }
 
 

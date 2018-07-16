@@ -1,12 +1,5 @@
 <?php
 
-function ensureSystemUserExists() {
-    if (!gpgSystemUserExists()) {
-        gpgCreateUser("system", "");
-    }
-}
-
-
 function getUtcTime() {
     $origTimeZone = date_default_timezone_get();
     date_default_timezone_set("UTC");
@@ -17,15 +10,62 @@ function getUtcTime() {
 
 
 function generateToken($username, $password) {
-    ensureSystemUserExists();
-    $tokenContent = [
+    $tokenRaw = openssl_random_pseudo_bytes(512);
+
+    $authInfo = [
+        "token" => base64_encode($tokenRaw),
         "username" => $username,
         "password" => $password,
         "expiretime" => getUtcTime() + getconfig()["tokenExpiryMinutes"]*60,
         "starttime" => getUtcTime(),
     ];
-    $tokenRaw = gpgEncryptSecret($username, $password, ["system"], json_encode($tokenContent), false);
-    return base64_encode($tokenRaw);
+
+    $tokenPath = getconfig()["tokenPath"];
+    $tokenId = bin2hex(substr($tokenRaw, 0, 15));
+    file_put_contents("$tokenPath/$tokenId", json_encode($authInfo));
+
+    return $authInfo["token"];
+}
+
+
+function cleanUpTokenDirectory() {
+    $tokenExpiryMinutes = getconfig()["tokenExpiryMinutes"];
+    $tokenExpirySeconds = $tokenExpiryMinutes * 60;
+
+    $tokenPath = getconfig()["tokenPath"];
+    $dh = opendir($tokenPath);
+    while (($fileName = readdir($dh)) !== false) {
+        $filePath = "$tokenPath/$fileName";
+        if (!is_file($filePath)) {
+            continue;
+        }
+
+        if(time() - filemtime($filePath) > $tokenExpirySeconds) {
+            unlink($filePath);
+        }
+    }
+
+    closedir($dh);
+}
+
+
+function deleteAllTokensForUser($username) {
+    $tokenPath = getconfig()["tokenPath"];
+    $dh = opendir($tokenPath);
+    while (($fileName = readdir($dh)) !== false) {
+        $filePath = "$tokenPath/$fileName";
+        if (!is_file($filePath)) {
+            continue;
+        }
+
+        $authInfo = json_decode(file_get_contents($filePath), true);
+
+        if ($authInfo["username"] == $username) {
+            unlink($filePath);
+        }
+    }
+
+    closedir($dh);
 }
 
 
@@ -38,10 +78,6 @@ function deny() {
 
 
 function verifyCredentials($username, $password) {
-    if ("username" == "system") {
-        return false;
-    }
-
     if (!gpgUserExists($username)) {
         return false;
     }
@@ -69,18 +105,23 @@ function extractTokenFromHeader() {
 
     $token = substr($authHeader, strlen("Bearer "));
     $tokenRaw = base64_decode($token);
+    $tokenId = bin2hex(substr($tokenRaw, 0, 15));
+    $tokenPath = getconfig()["tokenPath"];
 
-    // Check whether the token was signed by us
-    $json = null;
-    try {
-        $json = gpgDecryptSecret("system", null, $tokenRaw);
-    } catch (Exception $e) {
+    if (!file_exists("$tokenPath/$tokenId")) {
+        writelog("Auth token file $tokenPath/$tokenId does not exist");
+        deny();
+    }
+
+    $authInfo = json_decode(file_get_contents("$tokenPath/$tokenId"), true);
+
+    // Compare against entire token
+    if ($token !== $authInfo["token"]) {
         writelog("Invalid auth token");
         deny();
     }
 
     // Ensure token is not expired
-    $authInfo = json_decode($json, true);
     if ($authInfo["expiretime"] < getUtcTime() || $authInfo["starttime"] > getUtcTime()) {
         writelog("Expired auth token");
         deny();
@@ -94,16 +135,7 @@ function extractTokenFromHeader() {
         deny();
     }
 
-    // Ensure that the password in the token is still valid
-    try {
-        gpgEncryptSecret($authInfo["username"], $authInfo["password"], [$authInfo["username"]], "dummy");
-    } catch (Exception $e) {
-        if (strpos($e->getMessage(), "bad passphrase") !== false) {
-            writelog("Invalid auth token. User password has changed.");
-            deny();
-        }
-        throw $e;
-    }
+    cleanUpTokenDirectory();
 
     return $authInfo;
 }
