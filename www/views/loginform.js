@@ -103,7 +103,7 @@ var LoginForm = {
                     ]),
 
                     Session.current.alreadyTrustedDevice ? null : m(".pure-control-group", [
-                        m("label[for=otp]", "Two-factor password"),
+                        m("label[for=otp]", "Two-factor key"),
                         m("input#otp[type=text]", {
                             oninput: m.withAttr("value", function(value) {
                                 Session.current.otp = value;
