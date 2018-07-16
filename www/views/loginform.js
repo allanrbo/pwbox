@@ -49,7 +49,8 @@ var LoginForm = {
                                 Session.current.username = value;
                             }),
                             value: Session.current.username,
-                            readonly: Session.current.alreadyTrustedDevice
+                            readonly: Session.current.alreadyTrustedDevice,
+                            disabled: !Session.current.loggingIn ? "" : "disabled"
                         }),
                     ]),
 
@@ -67,7 +68,8 @@ var LoginForm = {
                             oninput: m.withAttr("value", function(value) {
                                 Session.current.password = value;
                             }),
-                            value: Session.current.password
+                            value: Session.current.password,
+                            disabled: !Session.current.loggingIn ? "" : "disabled"
                         }),
                     ]),
 
@@ -84,7 +86,8 @@ var LoginForm = {
                                     Session.current.username = "";
                                }
                             }),
-                            checked: Session.current.trustDevice
+                            checked: Session.current.trustDevice,
+                            disabled: !Session.current.loggingIn ? "" : "disabled"
                         }),
                     ]),
 
@@ -94,7 +97,8 @@ var LoginForm = {
                             oninput: m.withAttr("value", function(value) {
                                 Session.current.trustedDeviceName = value;
                             }),
-                            value: Session.current.trustedDeviceName
+                            value: Session.current.trustedDeviceName,
+                            disabled: !Session.current.loggingIn ? "" : "disabled"
                         }),
                     ]),
 
@@ -104,12 +108,13 @@ var LoginForm = {
                             oninput: m.withAttr("value", function(value) {
                                 Session.current.otp = value;
                             }),
-                            value: Session.current.otp
+                            value: Session.current.otp,
+                            disabled: !Session.current.loggingIn ? "" : "disabled"
                         }),
                     ]),
 
                     m(".pure-controls", m("button[type=submit].pure-button pure-button-primary",
-                        {disabled: !Session.current.loggingIn ? "" : "disabled"}, Session.current.loggingIn ? "Logging in..." : "Log in"))
+                        { disabled: !Session.current.loggingIn ? "" : "disabled" }, Session.current.loggingIn ? "Logging in..." : "Log in"))
                 ])
             )
         ];
