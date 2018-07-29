@@ -47,9 +47,14 @@ function ensurePermissions($config) {
         "/backuptokens"
     ];
 
+    $dataDirs = [];
     foreach ($dataSubDirs as $dataSubDir) {
-        $path = $config["dataPath"] . $dataSubDir;
+        $dataDirs[] = $config["dataPath"] . $dataSubDir;
+    }
 
+    $dataDirs[] = $config["tokenPath"];
+
+    foreach ($dataDirs as $path) {
         if (!file_exists($path)) {
             $r = @mkdir($path, 0700, true);
             if ($r === false) {

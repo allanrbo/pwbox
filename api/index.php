@@ -13,8 +13,6 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-ensureSystemUserExists();
-
 $method = $_SERVER["REQUEST_METHOD"];
 $uriPrefix = getconfig()["uriPrefix"];
 $uri = $_SERVER["REQUEST_URI"];
@@ -128,6 +126,23 @@ if ($method == "POST" && $uri == "/authenticate") {
 
 
 /*
+ * Logout endpoint
+ */
+if ($method == "POST" && $uri == "/logout") {
+    writelog("Requested $method on $uri");
+
+    $authInfo = extractTokenFromHeader();
+
+    $tokenPath = getconfig()["tokenPath"];
+    $tokenRaw = base64_decode($authInfo["token"]);
+    $tokenId = bin2hex(substr($tokenRaw, 0, 15));
+    unlink("$tokenPath/$tokenId");
+
+    exit();
+}
+
+
+/*
  * User creation endpoint
  */
 if ($method == "POST" && $uri == "/user") {
@@ -228,6 +243,9 @@ if ($method == "POST" && $uri == "/changepassword") {
     }
 
     gpgChangePassphrase($authInfo["username"], $authInfo["password"], $data["password"]);
+
+    deleteAllTokensForUser($authInfo["username"]);
+
     echo json_encode(["status" => "ok"]);
     exit();
 }

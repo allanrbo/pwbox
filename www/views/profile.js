@@ -117,7 +117,9 @@ var Profile = {
                 (!User.current.otpEnabled && !UserChangeOtpKey.current.otpUrl) ? m("fieldset", [
                     m(".pure-controls", [
                         m("button.pure-button pure-button-primary", {
-                            onclick: function() {
+                            onclick: function(e) {
+                                e.preventDefault();
+
                                 UserChangeOtpKey.save().then(function(result) {
                                     UserChangeOtpKey.current = result;
                                     Session.refreshProfile();
@@ -129,7 +131,9 @@ var Profile = {
                 (User.current.otpEnabled && !UserChangeOtpKey.current.otpUrl) ? m("fieldset", [
                     m(".pure-controls", [
                         m("button[type=submit].pure-button pure-button-primary", {
-                            onclick: function() {
+                            onclick: function(e) {
+                                e.preventDefault();
+
                                 if (!confirm("This will invalidate your existing key in your authenticator app as well as any emergency one-time passwords, and generate new ones. Are you sure?")) {
                                     return;
                                 }
@@ -151,7 +155,9 @@ var Profile = {
                 User.current.otpEnabled ? m("fieldset", [
                     m(".pure-controls", [
                         m("button.pure-button pure-button-primary",  {
-                            onclick: function() {
+                            onclick: function(e) {
+                                e.preventDefault();
+
                                 if (!confirm("Are you sure you want to disable two-factor authentication?")) {
                                     return;
                                 }
