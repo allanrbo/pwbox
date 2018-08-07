@@ -8,6 +8,7 @@ require("groups.inc.php");
 require("auth.inc.php");
 require("twofactor.inc.php");
 require("locking.inc.php");
+require("fileutils.inc.php");
 
 header("Content-Type: application/json");
 header("Cache-Control: no-cache, no-store, must-revalidate");
@@ -193,6 +194,7 @@ if ($method == "POST" && $uri == "/user") {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
+    takeLock();
     $authInfo = extractTokenFromHeader();
 
     $username = strtolower($matches[1]);
@@ -398,6 +400,7 @@ if ($method == "POST" && $uri == "/secret") {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
+    takeLock();
     $authInfo = extractTokenFromHeader();
 
     $secretId = $matches[1];
@@ -608,6 +611,9 @@ if ($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches))
     // Copy groups to tmp directory and modify, so we have not yet commited to the main storage in case we fail during reencryption
     $groupsPath = getDataPath() . "/groups";
     $tmpPath = getDataPath() . "/tmp/reencryption/" . uniqid();
+    register_shutdown_function(function() use ($tmpPath) {
+        shell_exec("rm -fr ${tmpPath}*");
+    });
     mkdir("{$tmpPath}_groups", 0700, true);
     shell_exec("cp $groupsPath/* {$tmpPath}_groups");
     file_put_contents("{$tmpPath}_groups/$groupName", json_encode($data));
@@ -706,6 +712,9 @@ if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matche
 
     // Copy groups to tmp directory and modify, so we have not yet commited to the main storage in case we fail during reencryption
     $groupsPath = getDataPath() . "/groups";
+    register_shutdown_function(function() use ($tmpPath) {
+        shell_exec("rm -fr ${tmpPath}*");
+    });
     $tmpPath = getDataPath() . "/tmp/reencryption/" . uniqid();
     mkdir("{$tmpPath}_groups", 0700, true);
     shell_exec("cp $groupsPath/* {$tmpPath}_groups");
@@ -766,6 +775,7 @@ if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
     writelog("Requested $method on $uri");
+    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
@@ -844,6 +854,14 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
 
     fclose($in);
 
+    // Prepare tmp dir to avoid commiting to main storage in case we fail during encryption of imported secrets
+    deleteOldSubDirs(getDataPath() . "/tmp/import/");
+    register_shutdown_function(function() use ($tmpPath) {
+        shell_exec("rm -fr ${tmpPath}*");
+    });
+    $tmpPath = getDataPath() . "/tmp/import/" . uniqid();
+    mkdir($tmpPath, 0700, true);
+
     // Import rows
     $secretsPath = getDataPath() . "/secrets";
     foreach ($toImport as $row) {
@@ -878,8 +896,10 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
         $secret["modifiedBy"] = $authInfo["username"];
         $secret["id"] = $secretId;
         $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $recipients, json_encode($secret));
-        file_put_contents("$secretsPath/$secretId", $ciphertext);
+        file_put_contents("$tmpPath/$secretId", $ciphertext);
     }
+
+    shell_exec("mv {$tmpPath}/* $secretsPath ; rm -fr {$tmpPath}");
 
     echo json_encode(["status" => "ok"]);
     exit();
@@ -921,13 +941,16 @@ if ($method == "GET" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
     writelog("Requested $method on $uri");
+    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
     $data = file_get_contents("php://input");
 
-    $tmpDir = "/tmp/" . uniqid();
-    shell_exec("mkdir $tmpDir");
+    // Prepare tmp dir to avoid commiting to main storage in case we fail during encryption of imported secrets
+    deleteOldSubDirs(getDataPath() . "/tmp/import/");
+    $tmpDir = getDataPath() . "/tmp/import/" . uniqid();
+    mkdir($tmpDir, 0700, true);
     register_shutdown_function(function() use ($tmpDir) {
         shell_exec("rm -fr $tmpDir");
     });
@@ -1031,7 +1054,7 @@ if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
     header("Content-Transfer-Encoding: binary");
     header("Content-Disposition: attachment; filename=\"users.tar\"");
 
-    $tmpDir = "/tmp/" . uniqid();
+    $tmpDir = getDataPath() . "/tmp/export/" . uniqid();
     shell_exec("mkdir $tmpDir");
     register_shutdown_function(function() use ($tmpDir) {
         shell_exec("rm -fr $tmpDir");
@@ -1052,17 +1075,18 @@ if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
 
 
 /*
- * Import tar of encrypted secrets
+ * Import tar of users
  */
 $matches = null;
 if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
     writelog("Requested $method on $uri");
+    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
     $data = file_get_contents("php://input");
 
-    $tmpDir = "/tmp/" . uniqid();
+    $tmpDir = getDataPath() . "/tmp/import/" . uniqid();
     shell_exec("mkdir $tmpDir");
     register_shutdown_function(function() use ($tmpDir) {
         shell_exec("rm -fr $tmpDir");
@@ -1096,9 +1120,7 @@ if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
     $groupsPath = getDataPath() . "/groups";
     $userProfilesPath = getDataPath() . "/userprofiles";
 
-    shell_exec("rm $gpgHomePath/* ; mv $tmpDir/gpghome/* $gpgHomePath");
-    shell_exec("rm $groupsPath/* ; mv $tmpDir/groups/* $groupsPath");
-    shell_exec("rm $userProfilesPath/* ; mv $tmpDir/userprofiles/* $userProfilesPath");
+    shell_exec("rm $gpgHomePath/* ; mv $tmpDir/gpghome/* $gpgHomePath ; rm $groupsPath/* ; mv $tmpDir/groups/* $groupsPath ; rm $userProfilesPath/* ; mv $tmpDir/userprofiles/* $userProfilesPath");
 
     exit();
 }

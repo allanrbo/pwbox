@@ -47,6 +47,8 @@ function ensurePermissions($config) {
         "/backuptokens",
         "/tmp",
         "/tmp/reencryption",
+        "/tmp/import",
+        "/tmp/export",
     ];
 
     $dataDirs = [];
