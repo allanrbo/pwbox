@@ -6,6 +6,8 @@ var GroupForm = {
         }
 
         User.loadList();
+
+        GroupForm.showspinner = false;
     },
 
     view: function() {
@@ -14,6 +16,8 @@ var GroupForm = {
             deleteButton = m("button.pure-button", {onclick: function(e) {
                 e.preventDefault();
                 if (confirm("Really delete user group \"" + Group.current.name + "\"?")) {
+                    GroupForm.showspinner = true;
+
                     Group.delete().then(function() {
                         m.route.set("/admin/groups");
                     });
@@ -22,11 +26,14 @@ var GroupForm = {
         }
 
         return [
+            GroupForm.showspinner ? m(".spinneroverlay", m(".spinner")) : null,
+
             m("h2.content-subhead", "Group"),
 
             m("form.pure-form.pure-form-aligned", {
                     onsubmit: function(e) {
                         e.preventDefault();
+                        GroupForm.showspinner = true;
                         Group.save().then(function() {
                             m.route.set("/admin/groups");
                         });
@@ -64,6 +71,10 @@ var GroupForm = {
                                 ])
                             );
                         })
+                    ]),
+
+                    !Group.current.modified ? null : m(".pure-controls", [
+                        m("label", "Be patient after pressing save or delete. All secrets relating to the group will be reencrypted. This may take a long time.")
                     ]),
 
                     m(".pure-controls", [

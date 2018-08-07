@@ -54,9 +54,8 @@ function getGroupMemberships($username) {
 }
 
 
-function reencryptSecretsUsingGroup($authInfo, $groupName, $removeGroup) {
+function reencryptSecretsUsingGroup($authInfo, $groupName, $outPath, $groupsPath) {
     $secretsPath = getDataPath() . "/secrets";
-    $groupsPath = getDataPath() . "/groups";
 
     $username = $authInfo["username"];
     $userProfilesPath = getDataPath() . "/userprofiles";
@@ -66,30 +65,28 @@ function reencryptSecretsUsingGroup($authInfo, $groupName, $removeGroup) {
     $secrets = gpgListAllSecretFiles($authInfo["username"], $authInfo["password"], $secretsListCache);
 
     foreach ($secrets as $secret) {
-        if ($secret["groups"] && in_array($groupName, $secret["groups"])) {
+        if (isset($secret["groups"]) && in_array($groupName, $secret["groups"])) {
             $secretId = $secret["id"];
             $fullSecret = gpgGetSecretFile($authInfo["username"], $authInfo["password"], "$secretsPath/$secretId");
 
-            $recipients = [$authInfo["username"]];
-
-            if ($removeGroup) {
-                $fullSecret["groups"] = array_diff($fullSecret["groups"], [$groupName]);
-            }
+            $adminGroup = json_decode(file_get_contents("$groupsPath/Administrators"), true);
+            $recipients = $adminGroup["members"];
+            $missingGroups = [];
 
             foreach ($fullSecret["groups"] as $groupName2) {
-                // Ensure the group exists
                 if (!file_exists("$groupsPath/$groupName2")) {
-                    http_response_code(400);
-                    echo json_encode(["status" => "error", "message" => "Group $groupName not found."]);
-                    exit();
+                    $missingGroups[] = $groupName2;
+                    continue;
                 }
 
-                $group = json_decode(file_get_contents("$groupsPath/$groupName"), true);
+                $group = json_decode(file_get_contents("$groupsPath/$groupName2"), true);
                 $recipients = array_unique(array_merge($recipients, $group["members"]));
             }
 
+            $fullSecret["groups"] = array_diff($fullSecret["groups"], $missingGroups);
+
             $ciphertext = gpgEncryptSecret($authInfo["username"], $authInfo["password"], $recipients, json_encode($fullSecret));
-            file_put_contents("$secretsPath/$secretId", $ciphertext);
+            file_put_contents("$outPath/$secretId", $ciphertext);
         }
     }
 }
@@ -101,4 +98,24 @@ function requireAdminGroup($authInfo) {
         echo json_encode(["status" => "error", "message" => "Not member of administrators group."]);
         exit();
     }
+}
+
+
+function deleteOldSubDirs($path) {
+    if (!is_dir($path)) {
+        return;
+    }
+
+    $dh = opendir($path);
+    while (($file = readdir($dh)) !== false) {
+        if ($file == "." || $file == "..") {
+            continue;
+        }
+
+        if (time() > filemtime($path . $file) + 3600) {
+            shell_exec("rm -fr $path/$file");
+        }
+    }
+
+    closedir($dh);
 }

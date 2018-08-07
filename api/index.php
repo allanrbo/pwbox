@@ -7,6 +7,7 @@ require("gpg.inc.php");
 require("groups.inc.php");
 require("auth.inc.php");
 require("twofactor.inc.php");
+require("locking.inc.php");
 
 header("Content-Type: application/json");
 header("Cache-Control: no-cache, no-store, must-revalidate");
@@ -573,6 +574,7 @@ if ($method == "POST" && $uri == "/group") {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
+    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
@@ -593,9 +595,30 @@ if ($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches))
     $data["modified"] = gmdate("Y-m-d\\TH:i:s\\Z");
     $data["modifiedBy"] = $authInfo["username"];
 
-    file_put_contents("$groupsPath/$groupName", json_encode($data));
+    // Ensure at least one admin
+    if ($groupName == "Administrators" && (!isset($data["members"]) || !$data["members"])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "There must be at least one administrator."]);
+        exit();
+    }
 
-    reencryptSecretsUsingGroup($authInfo, $groupName, false);
+    // Clean up in case there are any leftovers from previous interrupted runs
+    deleteOldSubDirs(getDataPath() . "/tmp/reencryption/");
+
+    // Copy groups to tmp directory and modify, so we have not yet commited to the main storage in case we fail during reencryption
+    $groupsPath = getDataPath() . "/groups";
+    $tmpPath = getDataPath() . "/tmp/reencryption/" . uniqid();
+    mkdir("{$tmpPath}_groups", 0700, true);
+    shell_exec("cp $groupsPath/* {$tmpPath}_groups");
+    file_put_contents("{$tmpPath}_groups/$groupName", json_encode($data));
+
+    // Output reencrypted secrets to tmp directory, so we have not yet commited to the main storage in case we fail during reencryption
+    mkdir("{$tmpPath}_secrets", 0700, true);
+    reencryptSecretsUsingGroup($authInfo, $groupName, "{$tmpPath}_secrets", "{$tmpPath}_groups");
+    $secretsPath = getDataPath() . "/secrets";
+
+    // Commit to main storage. Not quite atomically, but almost.
+    shell_exec("mv {$tmpPath}_groups/* $groupsPath ; mv {$tmpPath}_secrets/* $secretsPath ; rm -fr {$tmpPath}*");
 
     echo json_encode(["status" => "ok", "name" => $groupName]);
     exit();
@@ -659,6 +682,7 @@ if ($method == "GET" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches))
 $matches = null;
 if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
+    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
@@ -677,9 +701,23 @@ if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matche
         exit();
     }
 
-    reencryptSecretsUsingGroup($authInfo, $groupName, true);
+    // Clean up in case there are any leftovers from previous interrupted runs
+    deleteOldSubDirs(getDataPath() . "/tmp/reencryption/");
 
-    unlink("$groupsPath/$groupName");
+    // Copy groups to tmp directory and modify, so we have not yet commited to the main storage in case we fail during reencryption
+    $groupsPath = getDataPath() . "/groups";
+    $tmpPath = getDataPath() . "/tmp/reencryption/" . uniqid();
+    mkdir("{$tmpPath}_groups", 0700, true);
+    shell_exec("cp $groupsPath/* {$tmpPath}_groups");
+    unlink("{$tmpPath}_groups/$groupName");
+
+    // Output reencrypted secrets to tmp directory, so we have not yet commited to the main storage in case we fail during reencryption
+    mkdir("{$tmpPath}_secrets", 0700, true);
+    reencryptSecretsUsingGroup($authInfo, $groupName, "{$tmpPath}_secrets", "{$tmpPath}_groups");
+    $secretsPath = getDataPath() . "/secrets";
+
+    // Commit to main storage. Not quite atomically, but almost.
+    shell_exec("rm $groupsPath/$groupName ; mv {$tmpPath}_secrets/* $secretsPath ; rm -fr {$tmpPath}*");
 
     echo json_encode(["status" => "ok"]);
     exit();
