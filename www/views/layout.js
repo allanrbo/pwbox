@@ -1,5 +1,9 @@
 var Layout = {
     view: function(vnode) {
+        var isAdmin = false;
+        if (Session.getProfile()) {
+            isAdmin = Session.getProfile().groupMemberships.indexOf("Administrators") != -1;
+        }
 
         var area = null;
         var route = m.route.get();
@@ -11,10 +15,11 @@ var Layout = {
                 m("a.pure-menu-heading[href=#]", "PwBox"),
 
                 m("ul.pure-menu-list", [
-                    m("li.pure-menu-item", {class: area == "secrets" ? "pure-menu-selected" : ""}, m("a.pure-menu-link[href=/secrets]", {oncreate: m.route.link}, "Secrets")),
-                    m("li.pure-menu-item", {class: area == "admin" ? "pure-menu-selected" : ""}, m("a.pure-menu-link[href=/admin]", {oncreate: m.route.link}, "Admin")),
+                    m("li.pure-menu-item", {class: area == "secrets" ? "pure-menu-selected" : ""}, m("a.pure-menu-link[href=/secrets]", {oncreate: m.route.link}, [m("span.fa.fa-book"), " Secrets"])),
+                    !isAdmin ? null : m("li.pure-menu-item", {class: area == "admin" ? "pure-menu-selected" : ""}, m("a.pure-menu-link[href=/admin]", {oncreate: m.route.link}, [m("span.fa.fa-cog"), " Admin"])),
                     m("li.pure-menu-item.menu-item-divided"),
-                    m("li.pure-menu-item", m("a.pure-menu-link[href=/logout]", {oncreate: m.route.link}, "Log out")),
+                    m("li.pure-menu-item", m("a.pure-menu-link[href=/admin/profile]", {oncreate: m.route.link}, [m("span.fa.fa-user"), " " + Session.getUsername()])),
+                    m("li.pure-menu-item", m("a.pure-menu-link[href=/logout]", {oncreate: m.route.link}, [m("span.fa.fa-sign-out"), " Log out"])),
                     m("li.pure-menu-item", m("#sessionTimeRemaining.non-link-item", "")),
                 ])
             ])

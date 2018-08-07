@@ -39,6 +39,10 @@ a {
     font-size: small;
 }
 
+#menu .fa {
+    width: 1em;
+}
+
 .pure-button-primary, .pure-button-selected, a.pure-button-primary, a.pure-button-selected {
     background-color: #e6f14a;
     color: #595f72;
