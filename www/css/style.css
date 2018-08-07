@@ -138,6 +138,16 @@ table.secretslist td, table.secretslist th {
 table.secretslist th.password { width: 3em; }
 table.secretslist th.modified { width: 5.5em; }
 
+
+.secretsForm #password {
+    font-family: monospace;
+    font-size: 1.2em;
+}
+
+.pure-form.secretsForm input[type=text] {
+    width: 220px;
+}
+
 @media only screen and (max-width: 480px) {
     .content { padding: 1.2em; }
     table.secretslist th, table.secretslist td { padding: 0.2em 0.4em; }

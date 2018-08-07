@@ -251,7 +251,7 @@ var SecretForm = {
             ]);
         }
 
-        var form = m("form.pure-form.pure-form-aligned", {
+        var form = m("form.pure-form.pure-form-aligned.secretsForm", {
                 onsubmit: function(e) {
                     e.preventDefault();
 
@@ -301,6 +301,48 @@ var SecretForm = {
                         }),
                         value: Secret.current.password
                     }),
+                    " ",
+                    m("a[href=]", {
+                        onclick: function(e) {
+                            e.preventDefault();
+
+                            var text = "";
+                            // Excluding chars that can look ambigious, such as o and 0
+                            var possible = "abcdefghjkmnpqrstuvwxyz";
+                            for (var i = 0; i < 20; i++) {
+                                text += possible.charAt(Math.floor(Math.random() * possible.length));
+                            }
+
+                            var upper1 = 0, upper2 = 0, lower1 = 0, lower2 = 0, special1 = 0, special2 = 0, number1 = 0, number2 = 0;
+                            var noCollide = [0, text.length - 1];
+                            while(noCollide.indexOf(upper1) != -1) upper1 = Math.floor(Math.random() * (text.length - 1));
+                            noCollide.push(upper1);
+                            while(noCollide.indexOf(upper2) != -1) upper2 = Math.floor(Math.random() * (text.length - 1));
+                            noCollide.push(upper2);
+                            while(noCollide.indexOf(special1) != -1) special1 = Math.floor(Math.random() * (text.length - 1));
+                            noCollide.push(special1);
+                            while(noCollide.indexOf(special2) != -1) special2 = Math.floor(Math.random() * (text.length - 1));
+                            noCollide.push(special2);
+                            while(noCollide.indexOf(number1) != -1) number1 = Math.floor(Math.random() * (text.length - 1));
+                            noCollide.push(number1);
+                            while(noCollide.indexOf(number2) != -1) number2 = Math.floor(Math.random() * (text.length - 1));
+                            noCollide.push(number2);
+
+                            text = text.substring(0, upper1) + text.charAt(upper1).toUpperCase() + text.substring(upper1 + 1);
+                            text = text.substring(0, upper2) + text.charAt(upper2).toUpperCase() + text.substring(upper2 + 1);
+
+                            var possibleSpecial = ",.!#%";
+                            text = text.substring(0, special1) + possibleSpecial.charAt(Math.floor(Math.random() * possibleSpecial.length)) + text.substring(special1 + 1);
+                            text = text.substring(0, special2) + possibleSpecial.charAt(Math.floor(Math.random() * possibleSpecial.length)) + text.substring(special2 + 1);
+
+                            var possibleNumbers = "23456789";
+                            text = text.substring(0, number1) + possibleNumbers.charAt(Math.floor(Math.random() * possibleNumbers.length)) + text.substring(number1 + 1);
+                            text = text.substring(0, number2) + possibleNumbers.charAt(Math.floor(Math.random() * possibleNumbers.length)) + text.substring(number2 + 1);
+
+                            Secret.current.password = text;
+                            SecretForm.modified = true;
+                        }
+                    }, m("span.fa.fa-random", {style: "vertical-align: middle;"})),
                 ]),
 
                 m(".pure-control-group", [
