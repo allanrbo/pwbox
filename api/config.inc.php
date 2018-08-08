@@ -45,10 +45,6 @@ function ensurePermissions($config) {
         "/groups",
         "/userprofiles",
         "/backuptokens",
-        "/tmp",
-        "/tmp/reencryption",
-        "/tmp/import",
-        "/tmp/export",
     ];
 
     $dataDirs = [];

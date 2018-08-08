@@ -606,11 +606,12 @@ if ($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches))
     }
 
     // Clean up in case there are any leftovers from previous interrupted runs
-    deleteOldSubDirs(getDataPath() . "/tmp/reencryption/");
+    @mkdir("/tmp/pwbox/reencryption/", 0700, true);
+    deleteOldSubDirs("/tmp/pwbox/reencryption/");
 
     // Copy groups to tmp directory and modify, so we have not yet commited to the main storage in case we fail during reencryption
     $groupsPath = getDataPath() . "/groups";
-    $tmpPath = getDataPath() . "/tmp/reencryption/" . uniqid();
+    $tmpPath = "/tmp/pwbox/reencryption/" . uniqid();
     register_shutdown_function(function() use ($tmpPath) {
         shell_exec("rm -fr ${tmpPath}*");
     });
@@ -708,20 +709,21 @@ if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matche
     }
 
     // Clean up in case there are any leftovers from previous interrupted runs
-    deleteOldSubDirs(getDataPath() . "/tmp/reencryption/");
+    @mkdir("/tmp/pwbox/reencryption/", 0700, true);
+    deleteOldSubDirs("/tmp/pwbox/reencryption/");
 
     // Copy groups to tmp directory and modify, so we have not yet commited to the main storage in case we fail during reencryption
     $groupsPath = getDataPath() . "/groups";
+    $tmpPath = "/tmp/pwbox/reencryption/" . uniqid();
     register_shutdown_function(function() use ($tmpPath) {
         shell_exec("rm -fr ${tmpPath}*");
     });
-    $tmpPath = getDataPath() . "/tmp/reencryption/" . uniqid();
-    mkdir("{$tmpPath}_groups", 0700, true);
+    @mkdir("{$tmpPath}_groups", 0700, true);
     shell_exec("cp $groupsPath/* {$tmpPath}_groups");
     unlink("{$tmpPath}_groups/$groupName");
 
     // Output reencrypted secrets to tmp directory, so we have not yet commited to the main storage in case we fail during reencryption
-    mkdir("{$tmpPath}_secrets", 0700, true);
+    @mkdir("{$tmpPath}_secrets", 0700, true);
     reencryptSecretsUsingGroup($authInfo, $groupName, "{$tmpPath}_secrets", "{$tmpPath}_groups");
     $secretsPath = getDataPath() . "/secrets";
 
@@ -855,11 +857,12 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
     fclose($in);
 
     // Prepare tmp dir to avoid commiting to main storage in case we fail during encryption of imported secrets
-    deleteOldSubDirs(getDataPath() . "/tmp/import/");
+    @mkdir("/tmp/pwbox/import/", 0700, true);
+    deleteOldSubDirs("/tmp/pwbox/import/");
+    $tmpPath = "/tmp/pwbox/import/" . uniqid();
     register_shutdown_function(function() use ($tmpPath) {
         shell_exec("rm -fr ${tmpPath}*");
     });
-    $tmpPath = getDataPath() . "/tmp/import/" . uniqid();
     mkdir($tmpPath, 0700, true);
 
     // Import rows
@@ -948,9 +951,10 @@ if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
     $data = file_get_contents("php://input");
 
     // Prepare tmp dir to avoid commiting to main storage in case we fail during encryption of imported secrets
-    deleteOldSubDirs(getDataPath() . "/tmp/import/");
-    $tmpDir = getDataPath() . "/tmp/import/" . uniqid();
-    mkdir($tmpDir, 0700, true);
+    @mkdir("/tmp/pwbox/import/", 0700, true);
+    deleteOldSubDirs("/tmp/pwbox/import/");
+    $tmpDir = "/tmp/pwbox/import/" . uniqid();
+    @mkdir($tmpDir, 0700, true);
     register_shutdown_function(function() use ($tmpDir) {
         shell_exec("rm -fr $tmpDir");
     });
@@ -1054,8 +1058,8 @@ if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
     header("Content-Transfer-Encoding: binary");
     header("Content-Disposition: attachment; filename=\"users.tar\"");
 
-    $tmpDir = getDataPath() . "/tmp/export/" . uniqid();
-    shell_exec("mkdir $tmpDir");
+    $tmpDir = "/tmp/pwbox/export/" . uniqid();
+    @mkdir($tmpDir, 0700, true);
     register_shutdown_function(function() use ($tmpDir) {
         shell_exec("rm -fr $tmpDir");
     });
@@ -1086,8 +1090,8 @@ if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
 
     $data = file_get_contents("php://input");
 
-    $tmpDir = getDataPath() . "/tmp/import/" . uniqid();
-    shell_exec("mkdir $tmpDir");
+    $tmpDir = "/tmp/pwbox/import/" . uniqid();
+    @mkdir($tmpDir, 0700, true);
     register_shutdown_function(function() use ($tmpDir) {
         shell_exec("rm -fr $tmpDir");
     });
@@ -1120,7 +1124,10 @@ if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
     $groupsPath = getDataPath() . "/groups";
     $userProfilesPath = getDataPath() . "/userprofiles";
 
-    shell_exec("rm $gpgHomePath/* ; mv $tmpDir/gpghome/* $gpgHomePath ; rm $groupsPath/* ; mv $tmpDir/groups/* $groupsPath ; rm $userProfilesPath/* ; mv $tmpDir/userprofiles/* $userProfilesPath");
+    $cmd = "rm $gpgHomePath/* ; mv $tmpDir/gpghome/* $gpgHomePath ; ";
+    $cmd .= "rm $groupsPath/* ; mv $tmpDir/groups/* $groupsPath ; ";
+    $cmd .= "rm $userProfilesPath/* ; mv $tmpDir/userprofiles/* $userProfilesPath ; ";
+    shell_exec($cmd);
 
     exit();
 }
