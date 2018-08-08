@@ -10,6 +10,8 @@ require("twofactor.inc.php");
 require("locking.inc.php");
 require("fileutils.inc.php");
 
+takeLock();
+
 header("Content-Type: application/json");
 header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
@@ -194,7 +196,6 @@ if ($method == "POST" && $uri == "/user") {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/user\/([A-Za-z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
-    takeLock();
     $authInfo = extractTokenFromHeader();
 
     $username = strtolower($matches[1]);
@@ -400,7 +401,6 @@ if ($method == "POST" && $uri == "/secret") {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/secret\/([a-z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
-    takeLock();
     $authInfo = extractTokenFromHeader();
 
     $secretId = $matches[1];
@@ -577,7 +577,6 @@ if ($method == "POST" && $uri == "/group") {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
-    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
@@ -689,7 +688,6 @@ if ($method == "GET" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches))
 $matches = null;
 if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matches)) {
     writelog("Requested $method on $uri");
-    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
@@ -777,7 +775,6 @@ if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
     writelog("Requested $method on $uri");
-    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
@@ -944,7 +941,6 @@ if ($method == "GET" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
     writelog("Requested $method on $uri");
-    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
@@ -1084,7 +1080,6 @@ if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
 $matches = null;
 if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
     writelog("Requested $method on $uri");
-    takeLock();
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
