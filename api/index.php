@@ -1334,6 +1334,7 @@ if ($method == "POST" && $uri == "/updateosperform") {
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
+    @mkdir(getDataPath() . "/upgradeoutput/", 0700, true);
     $r = shell_exec("sudo /root/pwboxscripts/enqueueOsUpdate.sh 2&>1");
     $r = trim($r);
 
@@ -1353,13 +1354,14 @@ if ($method == "GET" && preg_match("/\/updateosperformstatus\/([a-f\d]{8}(-[a-f\
 
     $updateJobId = $matches[1];
 
-    if (!file_exists("/tmp/pwbox/upgradeoutput/$updateJobId.txt")) {
+    $logFilePath = getDataPath() . "/upgradeoutput/$updateJobId.txt";
+    if (!file_exists($logFilePath)) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
         exit();
     }
 
-    $r = file_get_contents("/tmp/pwbox/upgradeoutput/$updateJobId.txt");
+    $r = file_get_contents($logFilePath);
     $status = "running";
     if (strstr($r, "OS upgrade complete.")) {
         $status = "complete";

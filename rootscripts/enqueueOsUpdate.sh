@@ -1,7 +1,6 @@
 #!/bin/bash
 
 uuid=$(uuidgen)
-mkdir -p /tmp/pwbox/upgradeoutput/
 
 # Spin this off to a separate process using the at command, in order to keep running even if parent Apache goes down for upgrade
 echo "
@@ -13,7 +12,7 @@ echo "
         DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get --assume-yes autoremove 2>&1
         echo
         echo OS upgrade complete.
-    ) > /tmp/pwbox/upgradeoutput/$uuid.txt
+    ) > /pwbox/data/upgradeoutput/$uuid.txt
 " | at now
 
 echo $uuid
