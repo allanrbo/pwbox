@@ -1,0 +1,2 @@
+www-data ALL=NOPASSWD: /root/pwboxscripts/checkOsUpdate.sh
+www-data ALL=NOPASSWD: /root/pwboxscripts/enqueueOsUpdate.sh

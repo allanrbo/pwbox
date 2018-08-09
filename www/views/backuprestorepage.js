@@ -111,11 +111,11 @@ var BackupRestorePage = {
                 ]) : null,
                 (isTokenEnabled && tokenPostedObj.token) ? [
                     m("p", "Backup tar URL:"),
-                    m("pre", {style: "white-space:pre-wrap; word-wrap:break-word; padding-left:2em;"}, tokenPostedObj.url),
+                    m("pre.code", tokenPostedObj.url),
                     m("p", "Bearer token:"),
-                    m("pre", {style: "white-space:pre-wrap; word-wrap:break-word; padding-left:2em;"}, tokenPostedObj.token),
+                    m("pre.code", tokenPostedObj.token),
                     m("p", "Wget example line:"),
-                    m("pre", {style: "white-space:pre-wrap; word-wrap:break-word; padding-left:2em;"}, "wget " + tokenPostedObj.url + " \\\n-O " + exampleTarFileName + " \\\n--header \"Authorization: Bearer " + tokenPostedObj.token + "\"")
+                    m("pre.code", "wget " + tokenPostedObj.url + " \\\n-O " + exampleTarFileName + " \\\n--header \"Authorization: Bearer " + tokenPostedObj.token + "\"")
                 ] : null
             );
         }

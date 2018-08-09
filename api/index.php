@@ -736,8 +736,7 @@ if ($method == "DELETE" && preg_match("/\/group\/([a-zA-Z0-9]+)/", $uri, $matche
 /*
  * Export CSV
  */
-$matches = null;
-if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
+if ($method == "GET" && $uri == "/csv") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
@@ -772,8 +771,7 @@ if ($method == "GET" && preg_match("/\/csv/", $uri, $matches)) {
 /*
  * Import CSV
  */
-$matches = null;
-if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
+if ($method == "PUT" && $uri == "/csv") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
@@ -909,8 +907,7 @@ if ($method == "PUT" && preg_match("/\/csv/", $uri, $matches)) {
 /*
  * Export tar of encrypted secrets
  */
-$matches = null;
-if ($method == "GET" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
+if ($method == "GET" && $uri == "/backuptarsecrets") {
     writelog("Requested $method on $uri");
 
     $backupTokensPath = getDataPath() . "/backuptokens";
@@ -938,8 +935,7 @@ if ($method == "GET" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
 /*
  * Import tar of encrypted secrets
  */
-$matches = null;
-if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
+if ($method == "PUT" && $uri == "/backuptarsecrets") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
@@ -1038,8 +1034,7 @@ if ($method == "PUT" && preg_match("/\/backuptarsecrets/", $uri, $matches)) {
 /*
  * Export tar of users, keys, and groups
  */
-$matches = null;
-if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
+if ($method == "GET" && $uri == "/backuptarusers") {
     writelog("Requested $method on $uri");
 
     $backupTokensPath = getDataPath() . "/backuptokens";
@@ -1077,8 +1072,7 @@ if ($method == "GET" && preg_match("/\/backuptarusers/", $uri, $matches)) {
 /*
  * Import tar of users
  */
-$matches = null;
-if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
+if ($method == "PUT" && $uri == "/backuptarusers") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
@@ -1132,7 +1126,6 @@ if ($method == "PUT" && preg_match("/\/backuptarusers/", $uri, $matches)) {
 /*
  * Backup key status endpoint
  */
-$matches = null;
 if ($method == "GET" && $uri == "/backuptokens") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
@@ -1152,7 +1145,6 @@ if ($method == "GET" && $uri == "/backuptokens") {
 /*
  * Backup token generation endpoint
  */
-$matches = null;
 if ($method == "POST" && ($uri == "/changebackuptoken/secrets" || $uri == "/changebackuptoken/users")) {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
@@ -1194,7 +1186,6 @@ if ($method == "POST" && ($uri == "/changebackuptoken/secrets" || $uri == "/chan
 /*
  * Remove trusted device endpoint
  */
-$matches = null;
 if ($method == "POST" && $uri == "/removetrusteddevicebyid") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
@@ -1238,7 +1229,6 @@ if ($method == "POST" && $uri == "/removetrusteddevicebyid") {
 /*
  * Remove trusted device endpoint, unauthenticated, only when give a valid token
  */
-$matches = null;
 if ($method == "POST" && $uri == "/removetrusteddevicebyidunauthenticated") {
     writelog("Requested $method on $uri");
 
@@ -1293,6 +1283,89 @@ if ($method == "POST" && $uri == "/removetrusteddevicebyidunauthenticated") {
     file_put_contents("$userProfilesPath/$username", json_encode($user));
 
     echo json_encode(["status" => "ok"]);
+    exit();
+}
+
+
+/*
+ * Get OS info
+ */
+if ($method == "GET" && $uri == "/hostinfo") {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+    requireAdminGroup($authInfo);
+
+    $r = shell_exec("/usr/bin/hostnamectl");
+
+    echo json_encode(["consoleoutput" => $r]);
+    exit();
+}
+
+
+/*
+ * Check for OS update
+ */
+if ($method == "POST" && $uri == "/updateoscheck") {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+    requireAdminGroup($authInfo);
+
+    $r = shell_exec("sudo /root/pwboxscripts/checkOsUpdate.sh");
+
+    $upgradable = false;
+    if (strstr($r, "The following packages will be upgraded:")) {
+        $upgradable = true;
+    }
+
+    if (strstr($r, "0 upgraded,")) {
+        $r .= "\r\nNo upgrades available.";
+    }
+
+    echo json_encode(["upgradable" => $upgradable, "consoleoutput" => $r]);
+    exit();
+}
+
+
+/*
+ * Perform OS update
+ */
+if ($method == "POST" && $uri == "/updateosperform") {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+    requireAdminGroup($authInfo);
+
+    $r = shell_exec("sudo /root/pwboxscripts/enqueueOsUpdate.sh 2&>1");
+    $r = trim($r);
+
+    echo json_encode(["updateJobId" => $r]);
+    exit();
+}
+
+
+/*
+ * Get status of OS update job
+ */
+$matches = null;
+if ($method == "GET" && preg_match("/\/updateosperformstatus\/([a-f\d]{8}(-[a-f\d]{4}){4}[a-f\d]{8})/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+    requireAdminGroup($authInfo);
+
+    $updateJobId = $matches[1];
+
+    if (!file_exists("/tmp/pwbox/upgradeoutput/$updateJobId.txt")) {
+        http_response_code(404);
+        echo json_encode(["status" => "notFound"]);
+        exit();
+    }
+
+    $r = file_get_contents("/tmp/pwbox/upgradeoutput/$updateJobId.txt");
+    $status = "running";
+    if (strstr($r, "OS upgrade complete.")) {
+        $status = "complete";
+    }
+
+    echo json_encode(["status" => $status, "consoleoutput" => $r]);
     exit();
 }
 

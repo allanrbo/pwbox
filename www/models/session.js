@@ -153,7 +153,7 @@ var Session = {
             }
 
             if (Session.getSessionRemainingTimeSecs() <= 0) {
-                clearInterval(ref.f);
+                clearInterval(ref.r);
 
                 if (Session.getToken()) {
                     Session.logout();
@@ -165,6 +165,6 @@ var Session = {
             }
         };
         f();
-        ref.f = setInterval(f, 1000);
+        ref.r = setInterval(f, 1000);
     }
 }

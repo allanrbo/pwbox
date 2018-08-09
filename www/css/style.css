@@ -148,6 +148,12 @@ table.secretslist th.modified { width: 5.5em; }
     width: 220px;
 }
 
+pre.code {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    padding-left:2em;
+}
+
 @media only screen and (max-width: 480px) {
     .content { padding: 1.2em; }
     table.secretslist th, table.secretslist td { padding: 0.2em 0.4em; }
