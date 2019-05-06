@@ -2,7 +2,8 @@ var SoftwareUpdates = {
     hostInfo: {},
     updateOsCheckResult: {},
     updateOsPerformResult: {},
-    updateOsPerformStatusResult: {},
+    updateOsLogsListLoaded: false,
+    updateOsLogsList: {},
 
     getHostInfo: function() {
         return m.request({
@@ -43,16 +44,30 @@ var SoftwareUpdates = {
         .catch(alertErrorMessage);
     },
 
-    getUpdateOsPerformStatus: function(updateJobId) {
+    loadUpdateOsLogsList: function() {
         return m.request({
             method: "GET",
-            url: "/api/updateosperformstatus/" + updateJobId,
+            url: "/api/updateoslogs",
             config: xhrConfig,
         })
         .then(function(result) {
-            SoftwareUpdates.updateOsPerformStatusResult = result;
+            SoftwareUpdates.updateOsLogsList = result;
+            SoftwareUpdates.updateOsLogsListLoaded = true;
         })
         .catch(handleUnauthorized)
         .catch(alertErrorMessage);
     }
+
+    // getUpdateOsPerformStatus: function(updateJobId) {
+    //     return m.request({
+    //         method: "GET",
+    //         url: "/api/updateosperformstatus/" + updateJobId,
+    //         config: xhrConfig,
+    //     })
+    //     .then(function(result) {
+    //         SoftwareUpdates.updateOsPerformStatusResult = result;
+    //     })
+    //     .catch(handleUnauthorized)
+    //     .catch(alertErrorMessage);
+    // }
 }

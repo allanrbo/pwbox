@@ -3,14 +3,34 @@ var SoftwareUpdatesPage = {
         SoftwareUpdates.hostInfo = {};
         SoftwareUpdates.updateOsCheckResult = {};
         SoftwareUpdates.updateOsPerformResult = {};
-        SoftwareUpdates.updateOsPerformStatusResult = {};
 
         SoftwareUpdates.getHostInfo();
+        SoftwareUpdates.loadUpdateOsLogsList();
 
         SoftwareUpdatesPage.showspinner = false;
     },
 
     view: function() {
+
+        var updateOsLogsTable = SoftwareUpdates.updateOsLogsListLoaded ? "No operating system update logs yet." : "Loading operating system update logs...";
+
+        if (SoftwareUpdates.updateOsLogsList.length > 0) {
+            updateOsLogsTable = [
+                m("table.pure-table.pure-table-horizontal.secretslist", [
+                    m("thead", [
+                        m("tr", [
+                            m("th.title", "Log file name"),
+                        ])
+                    ]),
+                    m("tbody", SoftwareUpdates.updateOsLogsList.map(function(row) {
+                        return m("tr", [
+                            m("td", m("a", {href: "/admin/softwareupdates/updateoslogs/" + row, oncreate: m.route.link}, row))
+                        ]);
+                    }))
+                ])
+            ];
+        }
+
         return [
             SoftwareUpdatesPage.showspinner ? m(".spinneroverlay", m(".spinner")) : null,
 
@@ -26,7 +46,6 @@ var SoftwareUpdatesPage = {
                     e.preventDefault();
                     SoftwareUpdates.updateOsCheckResult = {};
                     SoftwareUpdates.updateOsPerformResult = {};
-                    SoftwareUpdates.updateOsPerformStatusResult = {};
                     SoftwareUpdatesPage.showspinner = true;
                     SoftwareUpdates.updateOsCheck().then(function() {
                         SoftwareUpdatesPage.showspinner = false;
@@ -34,26 +53,17 @@ var SoftwareUpdatesPage = {
                 }
             }, "Check for operating system updates")),
 
-            SoftwareUpdates.updateOsCheckResult.upgradable && SoftwareUpdates.updateOsPerformStatusResult.status != "complete" ? [
+            // SoftwareUpdates.updateOsCheckResult.upgradable && SoftwareUpdates.updateOsPerformStatusResult.status != "complete" ? [
+            true ? [
                 m("form.pure-form.pure-form-aligned",
                     m("fieldset", [
                         m(".pure-controls", [
                             m("button.pure-button pure-button-primary", {
                                 onclick: function(e) {
                                     e.preventDefault();
-                                    SoftwareUpdatesPage.showspinner = true;
                                     SoftwareUpdates.updateOsPerform().then(function() {
-                                        var ref = {};
-                                        var f = function() {
-                                            SoftwareUpdates.getUpdateOsPerformStatus(SoftwareUpdates.updateOsPerformResult.updateJobId).then(function() {
-                                                if (SoftwareUpdates.updateOsPerformStatusResult.status == "complete") {
-                                                    SoftwareUpdatesPage.showspinner = false;
-                                                    clearInterval(ref.r);
-                                                }
-                                            });
-                                        };
-
-                                        ref.r = setInterval(f, 2000);
+                                        alert("OS updated started. Check status in log file to ensure successful completion: " + SoftwareUpdates.updateOsPerformResult.updateJobId);
+                                        SoftwareUpdates.loadUpdateOsLogsList();
                                     });
                                 }
                             }, "Perform operating system updates")
@@ -62,15 +72,18 @@ var SoftwareUpdatesPage = {
                 )
             ] : null,
 
-            !SoftwareUpdates.updateOsCheckResult.consoleoutput || SoftwareUpdates.updateOsPerformStatusResult.consoleoutput ? null : [
-                m("p", "OS update check results:"),
-                m("pre.code", SoftwareUpdates.updateOsCheckResult.consoleoutput)
-            ],
+            m("h3.content-subhead", "Operating system update logs"),
+            updateOsLogsTable,
 
-            !SoftwareUpdates.updateOsPerformStatusResult.consoleoutput ? null : [
-                m("p", "OS update results:"),
-                m("pre.code", SoftwareUpdates.updateOsPerformStatusResult.consoleoutput)
-            ]
+
+            // m("h3.content-subhead", "PwBox updates"),
+
+            // m("p", m("a[href=]", {
+            //     onclick: function(e) {
+            //         e.preventDefault();
+            //     }
+            // }, "Check for PwBox updates")),
+
         ];
     }
 }
