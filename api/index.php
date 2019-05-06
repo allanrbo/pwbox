@@ -1344,17 +1344,33 @@ if ($method == "POST" && $uri == "/updateosperform") {
 
 
 /*
- * Get status of OS update job
+ * List all OS update jobs
  */
 $matches = null;
-if ($method == "GET" && preg_match("/\/updateosperformstatus\/([a-f\d]{8}(-[a-f\d]{4}){4}[a-f\d]{8})/", $uri, $matches)) {
+if ($method == "GET" && $uri == "/updateoslogs") {
     writelog("Requested $method on $uri");
     $authInfo = extractTokenFromHeader();
     requireAdminGroup($authInfo);
 
-    $updateJobId = $matches[1];
+    $r = array_values(array_diff(scandir(getDataPath() . "/upgradeoutput/"), [".", ".."]));
+    sort($r);
+    echo json_encode($r);
+    exit();
+}
 
-    $logFilePath = getDataPath() . "/upgradeoutput/$updateJobId.txt";
+
+/*
+ * Get status of OS update job
+ */
+$matches = null;
+if ($method == "GET" && preg_match("/\/updateosperformstatus\/(\d\d\d\d-\d\d-\d\dT\d{6}-[a-f\d]{8})/", $uri, $matches)) {
+    writelog("Requested $method on $uri");
+    $authInfo = extractTokenFromHeader();
+    requireAdminGroup($authInfo);
+
+    $filename = $matches[1];
+
+    $logFilePath = getDataPath() . "/upgradeoutput/$filename";
     if (!file_exists($logFilePath)) {
         http_response_code(404);
         echo json_encode(["status" => "notFound"]);
@@ -1362,12 +1378,7 @@ if ($method == "GET" && preg_match("/\/updateosperformstatus\/([a-f\d]{8}(-[a-f\
     }
 
     $r = file_get_contents($logFilePath);
-    $status = "running";
-    if (strstr($r, "OS upgrade complete.")) {
-        $status = "complete";
-    }
-
-    echo json_encode(["status" => $status, "consoleoutput" => $r]);
+    echo json_encode(["consoleoutput" => $r]);
     exit();
 }
 

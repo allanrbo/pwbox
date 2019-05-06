@@ -1,6 +1,10 @@
 #!/bin/bash
 
-uuid=$(uuidgen)
+
+logfile=$(date '+%Y-%m-%dT%H%M%S-')
+logfile+=$(uuidgen | cut -d - -f 1)
+logfile+=.log
+touch /pwbox/data/upgradeoutput/$logfile
 
 # Spin this off to a separate process using the at command, in order to keep running even if parent Apache goes down for upgrade
 echo "
@@ -12,7 +16,7 @@ echo "
         DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get --assume-yes autoremove 2>&1
         echo
         echo OS upgrade complete.
-    ) > /pwbox/data/upgradeoutput/$uuid.txt
+    ) > /pwbox/data/upgradeoutput/$logfile
 " | at now
 
-echo $uuid
+echo $logfile
