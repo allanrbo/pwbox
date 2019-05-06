@@ -139,11 +139,11 @@ var BackupRestorePage = {
                 "Export first to learn the format. Import merges entries where the pwboxId column matches an existing entry. Creates new entries for all other rows.",
             ]),
 
-            m("h3.content-subhead", "Encrypted tar file of secrets"),
+            m("h3.content-subhead", "Tar file with encrypted secrets"),
 
             m("p", m("a[href=]", {
                 onclick: makeFileDownloader(BackupRestore.getTarSecrets, "secrets.tar", "application/tar")
-            }, "Export all secrets encrypted in a tar")),
+            }, "Export all encrypted secrets in a tar file")),
 
             m("p", [
                 m("a[href=]", {
@@ -151,7 +151,7 @@ var BackupRestorePage = {
                 }, "Import and replace secrets from tar of encrypted secrets")
             ]),
 
-            m("h3.content-subhead", "Encrypted tar file of users, keys, and groups"),
+            m("h3.content-subhead", "Tar file of users, keys, and groups"),
 
             m("p", m("a[href=]", {
                 onclick: makeFileDownloader(BackupRestore.getTarUsers, "users.tar", "application/tar")
