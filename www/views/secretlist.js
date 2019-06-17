@@ -69,7 +69,7 @@ var SecretList = {
             }
 
             return date.getFullYear()
-                + "-" + pad(date.getMonth())
+                + "-" + pad(date.getMonth() + 1)
                 + "-" + pad(date.getDate());
         };
 
