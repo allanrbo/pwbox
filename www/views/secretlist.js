@@ -130,7 +130,6 @@ var SecretList = {
                 SecretList.secretsCount = Secret.list.length;
             }
 
-
             table = [
                 m("table.pure-table.pure-table-horizontal.secretslist", [
                     m("thead", [
