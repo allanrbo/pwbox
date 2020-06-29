@@ -70,6 +70,7 @@ function deleteAllTokensForUser($username) {
 
 
 function deny() {
+    writelog("Unauthorized");
     sleep(3);
     http_response_code(401);
     echo json_encode(["status" => "error", "message" => "Unauthorized"]);
